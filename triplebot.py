@@ -1,7 +1,7 @@
 # TO BE RUNNED ON PYTHON3.8
 # MADE BY ERIC ROY (github/royalmo)
 
-# Read README.md first, and be sure to enter your TOKEN and GUILD ID
+# Read README.md first, and be sure to enter your TOKEN
 
 # Importing stuff
 import json
@@ -11,7 +11,7 @@ from pathlib import Path
 from time import sleep
 
 PYPATH = str(Path(__file__).parent.absolute()) + "/"
-COMMAND_LIST = ['!triple', '!letsgo', '!gay']
+COMMAND_LIST = ['triple', 'letsgo', 'gay', 'dispensi', 'directedby', 'etesech', 'muertos', 'rot']
 
 class TskBot(discord.Client):
     async def on_ready(self):
@@ -29,7 +29,9 @@ class TskBot(discord.Client):
         if message.author == self.user or message.type != discord.MessageType.default:
             return
 
-        if message.content in COMMAND_LIST:
+        content = message.content
+
+        if content in ['!' + comm for comm in COMMAND_LIST]:
 
             voice_channel = message.author.voice.channel
 
@@ -42,8 +44,10 @@ class TskBot(discord.Client):
                 # Create StreamPlayer
                 vc = await voice_channel.connect()
 
+                audiopath = PYPATH + 'sounds/' + content[1:] + '_sound.mp3'
+
                 # Play the audio file
-                vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source='sounds/'+message.content[1:]+'_sound.mp3'))
+                vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
 
                 while vc.is_playing():
                     await asyncio.sleep(.1)
@@ -67,10 +71,10 @@ class TskBot(discord.Client):
 if __name__ == "__main__":
 
     # Welcome message
-    print("*"*55 + "\n" + " "*11 + "TSK BOT - Discord server manager\n" + "*"*55 + "\n\nLoading settings and connecting to Discord...")
+    print("*"*55 + "\n" + " "*9 + "Triple BOT - Discord server manager\n" + "*"*55 + "\n\nLoading settings and connecting to Discord...")
 
     # Loads settings
-    with open(PYPATH + 'bot_settings_2.json', 'r') as json_token:
+    with open(PYPATH + 'bot_settings.json', 'r') as json_token:
         filein = json.loads(json_token.read())
         DISCORD_TOKEN = filein['token']
         # DISCORD_GUILD = filein['guild']
