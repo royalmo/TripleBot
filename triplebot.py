@@ -99,69 +99,69 @@ class TskBot(discord.Client):
             await msg.delete(delay=5)
             await message.delete()
 
-        if content == "!repetir":
-            if self.last_code != None:
-                code = self.last_code
+        if content == "!repetir" and self.last_code != None:
+            code = self.last_code
 
-                voice_channel = message.author.voice
+            voice_channel = message.author.voice
 
-                # Only play if user is in a voice channel
-                if voice_channel!= None and not self.is_playing:
+            # Only play if user is in a voice channel
+            if voice_channel!= None and not self.is_playing:
 
-                    # Set playing status
-                    self.is_playing = True
+                # Set playing status
+                self.is_playing = True
 
-                    # Create StreamPlayer
-                    vc = await voice_channel.channel.connect()
+                # Create StreamPlayer
+                vc = await voice_channel.channel.connect()
 
-                    # Play the audio file
-                    audiopath = PYPATH + 'sounds/elcodigoes.mp3'
-                    if THISOS=="Windows":
-                        vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
-                    else:
-                        vc.play(discord.FFmpegPCMAudio(source=audiopath))
-
-                    while vc.is_playing():
-                        await asyncio.sleep(.1)
-
-                    for letter in code:
-
-                        if letter in ascii_lowercase:
-                            audiopath = PYPATH + 'alphabet/' + letter + '.mp3'
-
-                            if letter == 'w':
-                                audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
-
-                            # Play the audio file
-                            if THISOS=="Windows":
-                                vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
-                            else:
-                                vc.play(discord.FFmpegPCMAudio(source=audiopath))
-
-                            while vc.is_playing():
-                                await asyncio.sleep(.1)
-
-                    # Disconnect after the player has finished
-                    await vc.disconnect()
-
-                    # Set playing status
-                    self.is_playing = False
-
-                elif self.is_playing:
-                    msg = await message.channel.send('I am already playing a sound!')
-                    await msg.delete(delay=5)
-
+                # Play the audio file
+                audiopath = PYPATH + 'sounds/elcodigoes.mp3'
+                if THISOS=="Windows":
+                    vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
                 else:
-                    msg = await message.channel.send('User is not in a channel.')
-                    await msg.delete(delay=5)
+                    vc.play(discord.FFmpegPCMAudio(source=audiopath))
 
-                # I don't delete de msg cuz i want to keep the code on the chat.
-                await message.delete()
-                return
+                while vc.is_playing():
+                    await asyncio.sleep(.1)
+
+                for letter in code:
+
+                    if letter in ascii_lowercase:
+                        audiopath = PYPATH + 'alphabet/' + letter + '.mp3'
+
+                        if letter == 'w':
+                            audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
+
+                        # Play the audio file
+                        if THISOS=="Windows":
+                            vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                        else:
+                            vc.play(discord.FFmpegPCMAudio(source=audiopath))
+
+                        while vc.is_playing():
+                            await asyncio.sleep(.1)
+
+                # Disconnect after the player has finished
+                await vc.disconnect()
+
+                # Set playing status
+                self.is_playing = False
+
+            elif self.is_playing:
+                msg = await message.channel.send('I am already playing a sound!')
+                await msg.delete(delay=5)
+
+            else:
+                msg = await message.channel.send('User is not in a channel.')
+                await msg.delete(delay=5)
+
+            # I don't delete de msg cuz i want to keep the code on the chat.
+            await message.delete()
+            return
 
         if len(content.split())==2:
             if content.split()[0] in ["!codi", "!code"]:
                 code = content.split()[1].lower()
+                self.last_code = code
 
                 voice_channel = message.author.voice
 
