@@ -149,7 +149,8 @@ class TskBot(discord.Client):
                     msg = await message.channel.send('User is not in a channel.')
                     await msg.delete(delay=5)
 
-                await message.delete()
+                # I don't delete de msg cuz i want to keep the code on the chat.
+                # await message.delete()
                 return
 
         if content=='!triple help':
