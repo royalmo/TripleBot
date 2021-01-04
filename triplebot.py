@@ -18,12 +18,17 @@ PYPATH = str(Path(__file__).parent.absolute()) + "/"
 THISOS = system()
 
 # Loads settings
-with open(PYPATH + 'bot_settings.json', 'r') as json_token:
+with open(PYPATH + 'bot_token.json', 'r') as json_token:
     filein = json.loads(json_token.read())
     DISCORD_TOKEN = filein['token']
+
+# Load commands
+with open(PYPATH + 'bot_settings.json', 'r') as json_token:
+    filein = json.loads(json_token.read())
     COMMAND_LIST = filein['cmds']
 
 def reload_cmds():
+    global COMMAND_LIST
     with open(PYPATH + 'bot_settings.json', 'r') as json_token:
         filein = json.loads(json_token.read())
         COMMAND_LIST = filein['cmds']
@@ -37,6 +42,7 @@ class TskBot(discord.Client):
         await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="impostors"))
 
         self.is_playing = False
+        self.last_code = None
 
     async def on_message(self, message):
 
@@ -92,6 +98,66 @@ class TskBot(discord.Client):
             msg = await message.channel.send('Commands reloaded!')
             await msg.delete(delay=5)
             await message.delete()
+
+        if content == "!repetir":
+            if self.last_code != None:
+                code = self.last_code
+
+                voice_channel = message.author.voice
+
+                # Only play if user is in a voice channel
+                if voice_channel!= None and not self.is_playing:
+
+                    # Set playing status
+                    self.is_playing = True
+
+                    # Create StreamPlayer
+                    vc = await voice_channel.channel.connect()
+
+                    # Play the audio file
+                    audiopath = PYPATH + 'sounds/elcodigoes.mp3'
+                    if THISOS=="Windows":
+                        vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                    else:
+                        vc.play(discord.FFmpegPCMAudio(source=audiopath))
+
+                    while vc.is_playing():
+                        await asyncio.sleep(.1)
+
+                    for letter in code:
+
+                        if letter in ascii_lowercase:
+                            audiopath = PYPATH + 'alphabet/' + letter + '.mp3'
+
+                            if letter == 'w':
+                                audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
+
+                            # Play the audio file
+                            if THISOS=="Windows":
+                                vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                            else:
+                                vc.play(discord.FFmpegPCMAudio(source=audiopath))
+
+                            while vc.is_playing():
+                                await asyncio.sleep(.1)
+
+                    # Disconnect after the player has finished
+                    await vc.disconnect()
+
+                    # Set playing status
+                    self.is_playing = False
+
+                elif self.is_playing:
+                    msg = await message.channel.send('I am already playing a sound!')
+                    await msg.delete(delay=5)
+
+                else:
+                    msg = await message.channel.send('User is not in a channel.')
+                    await msg.delete(delay=5)
+
+                # I don't delete de msg cuz i want to keep the code on the chat.
+                await message.delete()
+                return
 
         if len(content.split())==2:
             if content.split()[0] in ["!codi", "!code"]:
@@ -154,7 +220,7 @@ class TskBot(discord.Client):
                 return
 
         if content=='!triple help':
-            msg = await message.channel.send('**COMMANDS:**\n`!triple reload`: Reload all soundbox commands.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!triple help`: Shows this updated menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.')
+            msg = await message.channel.send('**COMMANDS:**\n`!triple reload`: Reload all soundbox commands.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!repetir`: Repeats last saved code.\n`!triple help`: Shows this updated menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.')
             await msg.delete(delay=25)
             await message.delete()
             return
