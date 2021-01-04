@@ -11,8 +11,10 @@ from pathlib import Path
 from time import sleep
 from random import choice
 from string import ascii_lowercase
+from platform import system
 
 PYPATH = str(Path(__file__).parent.absolute()) + "/"
+THISOS = system()
 
 # Loads settings
 with open(PYPATH + 'bot_settings.json', 'r') as json_token:
@@ -45,7 +47,7 @@ class TskBot(discord.Client):
 
         if content in ['!' + comm for comm in COMMAND_LIST]:
 
-            voice_channel = message.author.voice.channel
+            voice_channel = message.author.voice
 
             # Only play music if user is in a voice channel
             if voice_channel!= None and not self.is_playing:
@@ -54,12 +56,15 @@ class TskBot(discord.Client):
                 self.is_playing = True
 
                 # Create StreamPlayer
-                vc = await voice_channel.connect()
+                vc = await voice_channel.channel.connect()
 
                 audiopath = PYPATH + 'sounds/' + content[1:] + '_sound.mp3'
 
                 # Play the audio file
-                vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                if THISOS=="Windows":
+                    vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                else:
+                    vc.play(discord.FFmpegPCMAudio(source=audiopath))
 
                 while vc.is_playing():
                     await asyncio.sleep(.1)
@@ -91,7 +96,7 @@ class TskBot(discord.Client):
             if content.split()[0] in ["!codi", "!code"]:
                 code = content.split()[1].lower()
 
-                voice_channel = message.author.voice.channel
+                voice_channel = message.author.voice
 
                 # Only play if user is in a voice channel
                 if voice_channel!= None and not self.is_playing:
@@ -100,11 +105,14 @@ class TskBot(discord.Client):
                     self.is_playing = True
 
                     # Create StreamPlayer
-                    vc = await voice_channel.connect()
+                    vc = await voice_channel.channel.connect()
 
                     # Play the audio file
                     audiopath = PYPATH + 'sounds/elcodigoes.mp3'
-                    vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                    if THISOS=="Windows":
+                        vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                    else:
+                        vc.play(discord.FFmpegPCMAudio(source=audiopath))
 
                     while vc.is_playing():
                         await asyncio.sleep(.1)
@@ -118,7 +126,10 @@ class TskBot(discord.Client):
                                 audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
 
                             # Play the audio file
-                            vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                            if THISOS=="Windows":
+                                vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                            else:
+                                vc.play(discord.FFmpegPCMAudio(source=audiopath))
 
                             while vc.is_playing():
                                 await asyncio.sleep(.1)
