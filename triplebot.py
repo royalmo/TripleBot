@@ -2,6 +2,7 @@
 # MADE BY ERIC ROY (github/royalmo)
 
 # Read README.md first, and be sure to enter your TOKEN
+# MAKE SURE YOU HAVE PyNaCl installed.
 
 # Importing stuff
 import json
@@ -151,6 +152,12 @@ class TskBot(discord.Client):
                 await message.delete()
                 return
 
+        if content=='!triple help':
+            msg = await message.channel.send('**COMMANDS:**\n`!triple reload`: Reload all soundbox commands.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!triple help`: Shows this updated menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.')
+            await msg.delete(delay=25)
+            await message.delete()
+            return
+
 
 if __name__ == "__main__":
 
@@ -158,7 +165,7 @@ if __name__ == "__main__":
     print("*"*55 + "\n" + " "*9 + "Triple BOT - Discord server manager\n" + "*"*55 + "\n\nLoading settings and connecting to Discord...")
 
     # Runs bot after 30 seconds of delay. Why we do this? Because when raspi boots, network is ready some seconds after rc.local is executed, so if we don't wait the program crashes.
-    # sleep(30)
+    sleep(30)
 
     # Starting the bot
     mainbot = TskBot()
