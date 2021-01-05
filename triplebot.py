@@ -42,7 +42,7 @@ class TskBot(discord.Client):
         await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="impostors"))
 
         self.is_playing = False
-        self.last_code = None
+        self.last_code = {}
 
     async def on_message(self, message):
 
@@ -99,8 +99,8 @@ class TskBot(discord.Client):
             await msg.delete(delay=5)
             await message.delete()
 
-        if content == "!repetir" and self.last_code != None:
-            code = self.last_code
+        if content == "!repetir" and str(message.guild.id) in self.last_code:
+            code = self.last_code[str(message.guild.id)]
 
             voice_channel = message.author.voice
 
@@ -161,7 +161,7 @@ class TskBot(discord.Client):
         if len(content.split())==2:
             if content.split()[0] in ["!codi", "!code"]:
                 code = content.split()[1].lower()
-                self.last_code = code
+                self.last_code[str(message.guild.id)] = code
 
                 voice_channel = message.author.voice
 
@@ -219,9 +219,10 @@ class TskBot(discord.Client):
                 # await message.delete()
                 return
 
-        if content=='!triple help':
-            msg = await message.channel.send('**COMMANDS:**\n`!triple reload`: Reload all soundbox commands.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!repetir`: Repeats last saved code.\n`!triple help`: Shows this updated menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.')
-            await msg.delete(delay=25)
+        if content in ['!triple help', '!triple help keep']:
+            msg = await message.channel.send('**COMMANDS:**\n`!triple reload`: Reload all soundbox commands.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!repetir`: Repeats last saved code.\n`!triple help`: Shows this updated menu.\n`!triple help keep`: Shows and doesn\'t delete this menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.')
+            if content != '!triple help keep':
+                await msg.delete(delay=25)
             await message.delete()
             return
 
