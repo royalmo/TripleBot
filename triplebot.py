@@ -220,7 +220,7 @@ class TskBot(discord.Client):
                 return
 
         if content in ['!triple help', '!triple help keep']:
-            msg = await message.channel.send('**COMMANDS:**\n`!triple reload`: Reload all soundbox commands.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!repetir`: Repeats last saved code.\n`!triple help`: Shows this updated menu.\n`!triple help keep`: Shows and doesn\'t delete this menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.')
+            msg = await message.channel.send('**COMMANDS:**\n`!triple reload`: Reload all soundbox commands.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!repetir`: Repeats last saved code.\n`!triple help`: Shows this updated menu.\n`!triple help keep`: Shows and doesn\'t delete this menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.\n\n*Made by royalmo:* https://github.com/royalmo/TripleBot')
             if content != '!triple help keep':
                 await msg.delete(delay=25)
             await message.delete()
