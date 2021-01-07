@@ -2,7 +2,7 @@
 # MADE BY ERIC ROY (github/royalmo)
 
 # Read README.md first, and be sure to enter your TOKEN
-# MAKE SURE YOU HAVE PyNaCl installed.
+# MAKE SURE YOU HAVE FFmpeg, discord.py and PyNaCl installed.
 
 # Importing stuff
 import json
@@ -16,6 +16,7 @@ from platform import system
 
 PYPATH = str(Path(__file__).parent.absolute()) + "/"
 THISOS = system()
+WINDOWS_FFMPEG_PATH = "C:/ffmpeg/bin/ffmpeg.exe"
 
 # Loads settings
 with open(PYPATH + 'bot_token.json', 'r') as json_token:
@@ -69,7 +70,7 @@ class TskBot(discord.Client):
 
                 # Play the audio file
                 if THISOS=="Windows":
-                    vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                    vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
                 else:
                     vc.play(discord.FFmpegPCMAudio(source=audiopath))
 
@@ -116,7 +117,7 @@ class TskBot(discord.Client):
                 # Play the audio file
                 audiopath = PYPATH + 'sounds/elcodigoes.mp3'
                 if THISOS=="Windows":
-                    vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                    vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
                 else:
                     vc.play(discord.FFmpegPCMAudio(source=audiopath))
 
@@ -133,7 +134,7 @@ class TskBot(discord.Client):
 
                         # Play the audio file
                         if THISOS=="Windows":
-                            vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                            vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
                         else:
                             vc.play(discord.FFmpegPCMAudio(source=audiopath))
 
@@ -177,7 +178,7 @@ class TskBot(discord.Client):
                     # Play the audio file
                     audiopath = PYPATH + 'sounds/elcodigoes.mp3'
                     if THISOS=="Windows":
-                        vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                        vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
                     else:
                         vc.play(discord.FFmpegPCMAudio(source=audiopath))
 
@@ -194,7 +195,7 @@ class TskBot(discord.Client):
 
                             # Play the audio file
                             if THISOS=="Windows":
-                                vc.play(discord.FFmpegPCMAudio(executable="C:/ffmpeg/bin/ffmpeg.exe", source=audiopath))
+                                vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
                             else:
                                 vc.play(discord.FFmpegPCMAudio(source=audiopath))
 

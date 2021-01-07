@@ -38,6 +38,8 @@ pip install discord.py
 pip install PyNaCl
 ```
 
+You will then need to install ffmpeg, in order to play audio files through Discord. If you are working on Windows, make sure the `ffmpeg.exe` is on the same path as the one mentionned in `triplebot.py`.
+
 If you use a linux-based OS, you might want to install the dependencies with `sudo`. You will maybe need to work with pip3 and python3 commands.
 
 Get yourself a Discord bot token, and place it in `bot_token.json`.
