@@ -131,20 +131,22 @@ class TskBot(discord.Client):
         if message.author == self.user or message.type != discord.MessageType.default:
             return
 
+        # Defining some constants
         content = message.content
+        channel = message.channel
+        auth_id = message.author.id
+        auth_vc = message.author.voice
 
         if content in ['!' + comm for comm in COMMAND_LIST]:
 
-            voice_channel = message.author.voice
-
             # Only play music if user is in a voice channel
-            if voice_channel!= None and not self.is_playing:
+            if auth_vc != None and not self.is_playing:
 
                 # Set playing status
                 self.is_playing = True
 
                 # Create StreamPlayer
-                vc = await voice_channel.channel.connect()
+                vc = await auth_vc.channel.connect()
 
                 audiopath = PYPATH + 'sounds/' + content[1:] + '_sound.mp3'
 
@@ -165,138 +167,82 @@ class TskBot(discord.Client):
                 self.is_playing = False
 
             elif self.is_playing:
-                msg = await message.channel.send('I am already playing a sound!')
+                msg = await channel.send('I am already playing a sound!')
                 await msg.delete(delay=5)
 
             else:
-                msg = await message.channel.send('User is not in a channel.')
+                msg = await channel.send('User is not in a channel.')
                 await msg.delete(delay=5)
 
             await message.delete()
             return
 
         if content in ["!triple fetch", "!triple fetch reboot"]:
-            auth_id = message.author.id
-            tchannel = message.channel
+
+            # Delete the message to let the user see something is happening.
             await message.delete()
             
+            # Fetch and pull from repository
             terminal("cd " + PYPATH + " && git fetch && git pull")
             reload_cmds()
 
-            msg = await tchannel.send('Fetched!')
+            # Shows a message
+            msg = await channel.send('Fetched!')
             await msg.delete(delay=5)
 
+            # Reboot if in linux and if requester is admin.
             if content == "!triple fetch reboot":
                 if auth_id==ADMIN_ID and THISOS=="Linux":
-                    msg = await tchannel.send('Rebooting in 5 seconds!')
+
+                    msg = await channel.send('Rebooting in 5 seconds!')
                     await msg.delete(delay=4)
                     asyncio.sleep(5)
+                    await self.close() # Close the Discord connection
                     terminal("sudo reboot")
+
                 else:
-                    msg = await tchannel.send('Can\'t reboot!')
+                    msg = await channel.send('Can\'t reboot!')
                     await msg.delete(delay=5)
 
         if content == "!triple stats":
-            tchannel = message.channel
+
             db_response = db_get_times_played()
-            msg = await tchannel.send('**TRIPLE STATS**' + ''.join(['\n*{0}* has been played {1} times.'.format(command, times) for command, times in db_response]))
+            msg = await channel.send('**TRIPLE STATS**' + ''.join(['\n*{0}* has been played {1} times.'.format(command, times) for command, times in db_response]))
             await msg.delete(delay=15)
             await message.delete()
 
-        if content == '!triple stop' and message.author.id == ADMIN_ID:
-            tchannel = message.channel
-            msg = await tchannel.send("Stopping bot...")
+        if content == '!triple stop' and auth_id == ADMIN_ID:
+
+            msg = await channel.send("Stopping bot...")
             await msg.delete(delay=2)
             await message.delete()
             await self.close()
 
-        if content == "!triple guilds" and message.author.id == ADMIN_ID:
-            tchannel = message.channel
-            msg = await tchannel.send("**GUILDS WHERE I AM:**" + ''.join(['\n{0} - *Id: {1}'.format(cguild.name, cguild.id) for cguild in self.guilds] ))
+        if content == "!triple guilds" and auth_id == ADMIN_ID:
+
+            msg = await channel.send("**GUILDS WHERE I AM:**" + ''.join(['\n{0} - *Id: {1}*'.format(cguild.name, cguild.id) for cguild in self.guilds] ))
             await msg.delete(delay=15)
             await message.delete()
 
         if content in ['!triple stats ' + comm for comm in COMMAND_LIST]:
-            tchannel = message.channel
+
             db_response = db_get_single_info(''.join(content.split()[2:]))
-            msg = await tchannel.send('**TRIPLE STATS**: *{0}*\nHas been played {1} times.\nKeeping track of since *{2}*\nLast played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3])) if int(db_response[3]) != 0 else "Hasn't been played."  ) )
+            msg = await channel.send('**TRIPLE STATS**: *{0}*\nHas been played {1} times.\nTripleBot is keeping track of this sound since *{2}*\nLast time played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3])) if int(db_response[3]) != 0 else "Hasn't been played."  ) )
             await msg.delete(delay=15)
             await message.delete()
 
-        if content == "!repetir" and str(message.guild.id) in self.last_code:
-            code = self.last_code[str(message.guild.id)]
-
-            voice_channel = message.author.voice
-
-            # Only play if user is in a voice channel
-            if voice_channel!= None and not self.is_playing:
-
-                # Set playing status
-                self.is_playing = True
-
-                # Create StreamPlayer
-                vc = await voice_channel.channel.connect()
-
-                # Play the audio file
-                audiopath = PYPATH + 'sounds/elcodigoes.mp3'
-                if THISOS=="Windows":
-                    vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
-                else:
-                    vc.play(discord.FFmpegPCMAudio(source=audiopath))
-
-                while vc.is_playing():
-                    await asyncio.sleep(.1)
-
-                for letter in code:
-
-                    if letter in ascii_lowercase:
-                        audiopath = PYPATH + 'alphabet/' + letter + '.mp3'
-
-                        if letter == 'w':
-                            audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
-
-                        # Play the audio file
-                        if THISOS=="Windows":
-                            vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
-                        else:
-                            vc.play(discord.FFmpegPCMAudio(source=audiopath))
-
-                        while vc.is_playing():
-                            await asyncio.sleep(.1)
-
-                # Disconnect after the player has finished
-                await vc.disconnect()
-
-                # Set playing status
-                self.is_playing = False
-
-            elif self.is_playing:
-                msg = await message.channel.send('I am already playing a sound!')
-                await msg.delete(delay=5)
-
-            else:
-                msg = await message.channel.send('User is not in a channel.')
-                await msg.delete(delay=5)
-
-            # I don't delete de msg cuz i want to keep the code on the chat.
-            await message.delete()
-            return
-
-        if len(content.split())==2:
-            if content.split()[0] in ["!codi", "!code"]:
-                code = content.split()[1].lower()
-                self.last_code[str(message.guild.id)] = code
-
-                voice_channel = message.author.voice
+        if content == "!repetir":
+            if str(message.guild.id) in self.last_code:
+                code = self.last_code[str(message.guild.id)]
 
                 # Only play if user is in a voice channel
-                if voice_channel!= None and not self.is_playing:
+                if auth_vc!= None and not self.is_playing:
 
                     # Set playing status
                     self.is_playing = True
 
                     # Create StreamPlayer
-                    vc = await voice_channel.channel.connect()
+                    vc = await auth_vc.channel.connect()
 
                     # Play the audio file
                     audiopath = PYPATH + 'sounds/elcodigoes.mp3'
@@ -332,11 +278,76 @@ class TskBot(discord.Client):
                     self.is_playing = False
 
                 elif self.is_playing:
-                    msg = await message.channel.send('I am already playing a sound!')
+                    msg = await channel.send('I am already playing a sound!')
                     await msg.delete(delay=5)
 
                 else:
-                    msg = await message.channel.send('User is not in a channel.')
+                    msg = await channel.send('User is not in a channel.')
+                    await msg.delete(delay=5)
+
+                # I don't delete de msg cuz i want to keep the code on the chat.
+                await message.delete()
+                return
+
+            else:
+                msg = await channel.send('I don\'t have anything to repeat!')
+                await msg.delete(delay=5)
+                await message.delete()
+                return
+
+        if len(content.split())==2:
+            if content.split()[0] in ["!codi", "!code"]:
+                code = content.split()[1].lower()
+                self.last_code[str(message.guild.id)] = code
+
+                # Only play if user is in a voice channel
+                if auth_vc != None and not self.is_playing:
+
+                    # Set playing status
+                    self.is_playing = True
+
+                    # Create StreamPlayer
+                    vc = await auth_vc.channel.connect()
+
+                    # Play the audio file
+                    audiopath = PYPATH + 'sounds/elcodigoes.mp3'
+                    if THISOS=="Windows":
+                        vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
+                    else:
+                        vc.play(discord.FFmpegPCMAudio(source=audiopath))
+
+                    while vc.is_playing():
+                        await asyncio.sleep(.1)
+
+                    for letter in code:
+
+                        if letter in ascii_lowercase:
+                            audiopath = PYPATH + 'alphabet/' + letter + '.mp3'
+
+                            if letter == 'w':
+                                audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
+
+                            # Play the audio file
+                            if THISOS=="Windows":
+                                vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
+                            else:
+                                vc.play(discord.FFmpegPCMAudio(source=audiopath))
+
+                            while vc.is_playing():
+                                await asyncio.sleep(.1)
+
+                    # Disconnect after the player has finished
+                    await vc.disconnect()
+
+                    # Set playing status
+                    self.is_playing = False
+
+                elif self.is_playing:
+                    msg = await channel.send('I am already playing a sound!')
+                    await msg.delete(delay=5)
+
+                else:
+                    msg = await channel.send('User is not in a channel.')
                     await msg.delete(delay=5)
 
                 # I don't delete de msg cuz i want to keep the code on the chat.
@@ -344,7 +355,7 @@ class TskBot(discord.Client):
                 return
 
         if content in ['!triple help', '!triple help keep']:
-            msg = await message.channel.send('**COMMANDS:**\n`!triple fetch`: Syncs the project folder with the repository.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!repetir`: Repeats last saved code.\n`!triple stats`: Shows some information about the popularity of each audio.\n`!triple stats X`: Shows all statistics about soundbox *X*.\n`!triple help`: Shows this updated menu.\n`!triple help keep`: Shows and doesn\'t delete this menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.\n\n*Made by royalmo:* https://github.com/royalmo/TripleBot')
+            msg = await channel.send('**COMMANDS:**\n`!triple fetch`: Syncs the project folder with the repository.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!repetir`: Repeats last saved code.\n`!triple stats`: Shows some information about the popularity of each audio.\n`!triple stats X`: Shows all statistics about soundbox *X*.\n`!triple help`: Shows this updated menu.\n`!triple help keep`: Shows and doesn\'t delete this menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.\n\n*Made by royalmo:* https://github.com/royalmo/TripleBot')
             if content != '!triple help keep':
                 await msg.delete(delay=25)
             await message.delete()
