@@ -91,13 +91,7 @@ def db_get_times_played():
 
 def db_command_played(commandname):
     # Database settings
-    try:
-        conn = sqlite3.connect(PYPATH + "db/stats.db")
-    except sqlite3.OperationalError:
-        # If db file not found, we create one
-        terminal("mkdir " + PYPATH + "db")
-        terminal("touch " + PYPATH + "db/stats.db")
-        conn = sqlite3.connect(PYPATH + "db/stats.db")
+    conn = sqlite3.connect(PYPATH + "db/stats.db")
 
     conn_cursor = conn.cursor()
 
