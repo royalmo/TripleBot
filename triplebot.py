@@ -91,7 +91,14 @@ def db_get_times_played():
 
 def db_command_played(commandname):
     # Database settings
-    conn = sqlite3.connect(PYPATH + "db/stats.db")
+    try:
+        conn = sqlite3.connect(PYPATH + "db/stats.db")
+    except sqlite3.OperationalError:
+        # If db file not found, we create one
+        terminal("mkdir " + PYPATH + "db")
+        terminal("touch " + PYPATH + "db/stats.db")
+        conn = sqlite3.connect(PYPATH + "db/stats.db")
+
     conn_cursor = conn.cursor()
 
     # Get current commands
@@ -199,11 +206,13 @@ class TskBot(discord.Client):
             db_response = db_get_times_played()
             msg = await tchannel.send('**TRIPLE STATS**' + ['\n{0} has been played {1} times.'.format(command, times) for command, times in db_response])
             await msg.delete(delay=15)
+            await message.delete()
 
         if content in ['!triple stats ' + comm for comm in COMMAND_LIST]:
-            db_response = db_get_single_info(content.split()[2:])
+            db_response = db_get_single_info(''.join(content.split()[2:]))
             msg = await tchannel.send('**TRIPLE STATS**: {0}\nHas been played {1} times.\nKeeping track of since {2}\nLast played: {3}'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3]))) )
             await msg.delete(delay=15)
+            await message.delete()
 
         if content == "!repetir" and str(message.guild.id) in self.last_code:
             code = self.last_code[str(message.guild.id)]
