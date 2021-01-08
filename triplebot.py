@@ -13,10 +13,14 @@ from time import sleep
 from random import choice
 from string import ascii_lowercase
 from platform import system
+from os import system as terminal
 
 PYPATH = str(Path(__file__).parent.absolute()) + "/"
 THISOS = system()
 WINDOWS_FFMPEG_PATH = "C:/ffmpeg/bin/ffmpeg.exe"
+
+# The admin id is the only discord user that can restart the hosted pc (this will only work in ubuntu)
+ADMIN_ID = 354215919318466561
 
 # Loads settings
 with open(PYPATH + 'bot_token.json', 'r') as json_token:
@@ -94,11 +98,30 @@ class TskBot(discord.Client):
             await message.delete()
             return
 
-        if content == "!triple reload":
-            reload_cmds()
-            msg = await message.channel.send('Commands reloaded!')
-            await msg.delete(delay=5)
+        if content in ["!triple fetch", "!triple fetch reboot"]:
+            auth_id = message.author.id
+            tchannel = message.channel
             await message.delete()
+            
+            terminal("cd " + PYPATH + " && git fetch && git pull")
+            reload_cmds()
+
+            msg = await tchannel.send('Fetched!')
+            await msg.delete(delay=5)
+
+            if content == "!triple fetch reboot":
+                if auth_id==ADMIN_ID and THISOS=="Linux":
+                    msg = await tchannel.send('Rebooting in 5 seconds!')
+                    await msg.delete(delay=4)
+                    asyncio.sleep(5)
+                    terminal("sudo reboot")
+                else:
+                    msg = await tchannel.send('Can\'t reboot!')
+                    await msg.delete(delay=5)
+
+        if content == "!triple stats":
+            msg = await tchannel.send('I am still programming the stats function!')
+            await msg.delete(delay=15)
 
         if content == "!repetir" and str(message.guild.id) in self.last_code:
             code = self.last_code[str(message.guild.id)]
@@ -221,7 +244,7 @@ class TskBot(discord.Client):
                 return
 
         if content in ['!triple help', '!triple help keep']:
-            msg = await message.channel.send('**COMMANDS:**\n`!triple reload`: Reload all soundbox commands.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!repetir`: Repeats last saved code.\n`!triple help`: Shows this updated menu.\n`!triple help keep`: Shows and doesn\'t delete this menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.\n\n*Made by royalmo:* https://github.com/royalmo/TripleBot')
+            msg = await message.channel.send('**COMMANDS:**\n`!triple fetch`: Syncs the project folder with the repository.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!repetir`: Repeats last saved code.\n`!triple stats`: Shows some information about the popularity of each audio.\n`!triple help`: Shows this updated menu.\n`!triple help keep`: Shows and doesn\'t delete this menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.\n\n*Made by royalmo:* https://github.com/royalmo/TripleBot')
             if content != '!triple help keep':
                 await msg.delete(delay=25)
             await message.delete()
