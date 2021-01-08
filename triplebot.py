@@ -99,7 +99,7 @@ def db_command_played(commandname):
     conn_cursor.execute("SELECT times_played FROM Sounds WHERE name='" + commandname + "'")
     times_played = int(conn_cursor.fetchall()[0][0]) + 1
 
-    conn_cursor.execute("UPDATE Sounds SET times_played=" + str(times_played) + " WHERE name='" + commandname + "'")
+    conn_cursor.execute("UPDATE Sounds SET(times_played=" + str(times_played) + ", last_played=" + str(int(time.time())) + ") WHERE name='" + commandname + "'")
     conn.commit()
 
     # Close the connection
@@ -199,7 +199,7 @@ class TskBot(discord.Client):
         if content == "!triple stats":
             tchannel = message.channel
             db_response = db_get_times_played()
-            msg = await tchannel.send('**TRIPLE STATS**' + ['\n{0} has been played {1} times.'.format(command, times) for command, times in db_response])
+            msg = await tchannel.send('**TRIPLE STATS**' + ''.join(['\n{0} has been played {1} times.'.format(command, times) for command, times in db_response]))
             await msg.delete(delay=15)
             await message.delete()
 
