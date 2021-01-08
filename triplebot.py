@@ -8,6 +8,8 @@
 import json
 import discord
 import asyncio
+import sqlite3
+import time
 from pathlib import Path
 from time import sleep
 from random import choice
@@ -32,11 +34,84 @@ with open(PYPATH + 'bot_settings.json', 'r') as json_token:
     filein = json.loads(json_token.read())
     COMMAND_LIST = filein['cmds']
 
+def update_db_cmds():
+    # Database settings
+    conn = sqlite3.connect(PYPATH + "db/stats.db")
+    conn_cursor = conn.cursor()
+    conn_cursor.execute('SELECT name from sqlite_master where type= "table"')
+    tables = [t[0] for t in conn_cursor.fetchall()]
+
+    # Creates table if Sounds doesn't exist
+    if 'Sounds' not in tables:
+        print("Table not found, creating one.")
+        conn_cursor.execute("CREATE TABLE Sounds(id integer PRIMARY KEY, name text, times_played integer, added_at integer, last_played integer)")
+        conn.commit()
+
+    # Get current commands
+    conn_cursor.execute("SELECT name from Sounds")
+    sql_commands = [c[0] for c in conn_cursor.fetchall()]
+
+    # Add new commands if found
+    seconds = time.time()
+    for command in COMMAND_LIST:
+        if command not in sql_commands:
+            print("Adding command: " + command)
+            conn_cursor.execute("INSERT INTO Sounds(name, times_played, added_at, last_played) VALUES('" + command + "', 0, " + str(int(seconds)) + ", 0)")
+            conn.commit()
+
+    conn.close()
+
+def db_get_single_info(commandname):
+    # Database settings
+    conn = sqlite3.connect(PYPATH + "db/stats.db")
+    conn_cursor = conn.cursor()
+
+    # Get current commands
+    conn_cursor.execute("SELECT name, times_played, added_at, last_played FROM Sounds WHERE name='" + commandname + "'")
+    response = conn_cursor.fetchall()[0]
+
+    # Close the connection
+    conn.close()
+
+    return response
+
+def db_get_times_played():
+    # Database settings
+    conn = sqlite3.connect(PYPATH + "db/stats.db")
+    conn_cursor = conn.cursor()
+
+    # Get current commands
+    conn_cursor.execute("SELECT name, times_played FROM Sounds")
+    response = conn_cursor.fetchall()
+
+    # Close the connection
+    conn.close()
+
+    return response
+
+def db_command_played(commandname):
+    # Database settings
+    conn = sqlite3.connect(PYPATH + "db/stats.db")
+    conn_cursor = conn.cursor()
+
+    # Get current commands
+    conn_cursor.execute("SELECT times_played FROM Sounds WHERE name='" + commandname + "'")
+    times_played = int(conn_cursor.fetchall()[0][0]) + 1
+
+    conn_cursor.execute("UPDATE Sounds SET times_played=" + str(times_played) + " WHERE name='" + commandname + "'")
+    conn.commit()
+
+    # Close the connection
+    conn.close()
+
+
 def reload_cmds():
     global COMMAND_LIST
     with open(PYPATH + 'bot_settings.json', 'r') as json_token:
         filein = json.loads(json_token.read())
         COMMAND_LIST = filein['cmds']
+
+    update_db_cmds()
 
 class TskBot(discord.Client):
     async def on_ready(self):
@@ -78,6 +153,7 @@ class TskBot(discord.Client):
                 else:
                     vc.play(discord.FFmpegPCMAudio(source=audiopath))
 
+                db_command_played(content[1:])
                 while vc.is_playing():
                     await asyncio.sleep(.1)
 
@@ -120,7 +196,13 @@ class TskBot(discord.Client):
                     await msg.delete(delay=5)
 
         if content == "!triple stats":
-            msg = await tchannel.send('I am still programming the stats function!')
+            db_response = db_get_times_played()
+            msg = await tchannel.send('**TRIPLE STATS**' + ['\n{0} has been played {1} times.'.format(command, times) for command, times in db_response])
+            await msg.delete(delay=15)
+
+        if content in ['!triple stats ' + comm for comm in COMMAND_LIST]:
+            db_response = db_get_single_info(content.split()[2:])
+            msg = await tchannel.send('**TRIPLE STATS**: {0}\nHas been played {1} times.\nKeeping track of since {2}\nLast played: {3}'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3]))) )
             await msg.delete(delay=15)
 
         if content == "!repetir" and str(message.guild.id) in self.last_code:
@@ -254,7 +336,11 @@ class TskBot(discord.Client):
 if __name__ == "__main__":
 
     # Welcome message
-    print("*"*55 + "\n" + " "*9 + "Triple BOT - Discord server manager\n" + "*"*55 + "\n\nLoading settings and connecting to Discord...")
+    print("*"*55 + "\n" + " "*9 + "Triple BOT - Discord server manager\n" + "*"*55 + "\n\nUpdating database...")
+    update_db_cmds()
+    print(db_get_single_info('sapo'))
+    
+    print("Database updated!\nLoading settings and connecting to Discord...")
 
     # Runs bot after 30 seconds of delay. Why we do this? Because when raspi boots, network is ready some seconds after rc.local is executed, so if we don't wait the program crashes.
     sleep(30)
