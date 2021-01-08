@@ -199,14 +199,14 @@ class TskBot(discord.Client):
         if content == "!triple stats":
             tchannel = message.channel
             db_response = db_get_times_played()
-            msg = await tchannel.send('**TRIPLE STATS**' + ''.join(['\n{0} has been played {1} times.'.format(command, times) for command, times in db_response]))
+            msg = await tchannel.send('**TRIPLE STATS**' + ''.join(['\n*{0}* has been played {1} times.'.format(command, times) for command, times in db_response]))
             await msg.delete(delay=15)
             await message.delete()
 
         if content in ['!triple stats ' + comm for comm in COMMAND_LIST]:
             tchannel = message.channel
             db_response = db_get_single_info(''.join(content.split()[2:]))
-            msg = await tchannel.send('**TRIPLE STATS**: {0}\nHas been played {1} times.\nKeeping track of since {2}\nLast played: {3}'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3]))) )
+            msg = await tchannel.send('**TRIPLE STATS**: *{0}*\nHas been played {1} times.\nKeeping track of since *{2}*\nLast played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2]) if db_response[2] != 0 else "Hasn't been played."), time.ctime(int(db_response[3]))) )
             await msg.delete(delay=15)
             await message.delete()
 
@@ -331,7 +331,7 @@ class TskBot(discord.Client):
                 return
 
         if content in ['!triple help', '!triple help keep']:
-            msg = await message.channel.send('**COMMANDS:**\n`!triple fetch`: Syncs the project folder with the repository.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!repetir`: Repeats last saved code.\n`!triple stats`: Shows some information about the popularity of each audio.\n`!triple help`: Shows this updated menu.\n`!triple help keep`: Shows and doesn\'t delete this menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.\n\n*Made by royalmo:* https://github.com/royalmo/TripleBot')
+            msg = await message.channel.send('**COMMANDS:**\n`!triple fetch`: Syncs the project folder with the repository.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!repetir`: Repeats last saved code.\n`!triple stats`: Shows some information about the popularity of each audio.\n`!triple stats X`: Shows all statistics about soundbox *X*.\n`!triple help`: Shows this updated menu.\n`!triple help keep`: Shows and doesn\'t delete this menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.\n\n*Made by royalmo:* https://github.com/royalmo/TripleBot')
             if content != '!triple help keep':
                 await msg.delete(delay=25)
             await message.delete()
