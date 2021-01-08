@@ -203,6 +203,11 @@ class TskBot(discord.Client):
             await msg.delete(delay=15)
             await message.delete()
 
+        if content == "!triple guilds" and message.author.id == ADMIN_ID:
+            msg = await tchannel.send("**GUILDS WHERE I AM:**" + ''.join(['\n{0} - *Id: {1}'.format(cguild.name, cguild.id) for cguild in self.guilds] ))
+            await msg.delete(delay=15)
+            await message.delete()
+
         if content in ['!triple stats ' + comm for comm in COMMAND_LIST]:
             tchannel = message.channel
             db_response = db_get_single_info(''.join(content.split()[2:]))
