@@ -99,7 +99,7 @@ def db_command_played(commandname):
     conn_cursor.execute("SELECT times_played FROM Sounds WHERE name='" + commandname + "'")
     times_played = int(conn_cursor.fetchall()[0][0]) + 1
 
-    conn_cursor.execute("UPDATE Sounds SET(times_played=" + str(times_played) + ", last_played=" + str(int(time.time())) + ") WHERE name='" + commandname + "'")
+    conn_cursor.execute("UPDATE Sounds SET times_played=" + str(times_played) + ", last_played=" + str(int(time.time())) + " WHERE name='" + commandname + "'")
     conn.commit()
 
     # Close the connection
