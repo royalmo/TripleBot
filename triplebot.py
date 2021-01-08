@@ -204,12 +204,14 @@ class TskBot(discord.Client):
             await message.delete()
 
         if content == '!triple stop' and message.author.id == ADMIN_ID:
+            tchannel = message.channel
             msg = await tchannel.send("Stopping bot...")
             await msg.delete(delay=2)
             await message.delete()
             await self.close()
 
         if content == "!triple guilds" and message.author.id == ADMIN_ID:
+            tchannel = message.channel
             msg = await tchannel.send("**GUILDS WHERE I AM:**" + ''.join(['\n{0} - *Id: {1}'.format(cguild.name, cguild.id) for cguild in self.guilds] ))
             await msg.delete(delay=15)
             await message.delete()
