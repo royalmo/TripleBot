@@ -206,7 +206,7 @@ class TskBot(discord.Client):
         if content in ['!triple stats ' + comm for comm in COMMAND_LIST]:
             tchannel = message.channel
             db_response = db_get_single_info(''.join(content.split()[2:]))
-            msg = await tchannel.send('**TRIPLE STATS**: *{0}*\nHas been played {1} times.\nKeeping track of since *{2}*\nLast played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2]) if db_response[2] != 0 else "Hasn't been played."), time.ctime(int(db_response[3]))) )
+            msg = await tchannel.send('**TRIPLE STATS**: *{0}*\nHas been played {1} times.\nKeeping track of since *{2}*\nLast played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3])) if int(db_response[3]) != 0 else "Hasn't been played."  ) )
             await msg.delete(delay=15)
             await message.delete()
 
