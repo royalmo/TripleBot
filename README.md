@@ -16,6 +16,10 @@ The bot has also the function of *speak a code*, that will pronounce all the asc
 
 `!repetir`: Repeats last saved code.
 
+`!triple stats`: Shows some information about the popularity of each audio.
+
+`!triple stats X`: Shows all statistics about soundbox X.
+
 `!triple help`: Shows this updated menu.
 
 `!triple help keep`: Shows and doesn't delete this menu.
