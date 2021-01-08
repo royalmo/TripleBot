@@ -34,6 +34,14 @@ with open(PYPATH + 'bot_settings.json', 'r') as json_token:
     filein = json.loads(json_token.read())
     COMMAND_LIST = filein['cmds']
 
+# funcio de merda que transforma string a int: https://stackoverflow.com/questions/1265665/how-can-i-check-if-a-string-represents-an-int-without-using-try-except
+def isInt(s):
+    try: 
+        int(s)
+        return True
+    except ValueError:
+        return False
+
 def update_db_cmds():
     # Database settings
     conn = sqlite3.connect(PYPATH + "db/stats.db")
@@ -353,6 +361,72 @@ class TskBot(discord.Client):
                 # I don't delete de msg cuz i want to keep the code on the chat.
                 # await message.delete()
                 return
+        if len(content.split())==3:
+            laputaeric = content.split()
+            if laputaeric[0] in ["!codi", "!code"]:
+                code = laputaeric[1].lower()
+                times = laputaeric[2]
+
+                if isInt(times):
+                    timesInt = int(times)
+                else:
+                    msg = await channel.send(str(times) + " is not a number.")
+                    await msg.delete(delay=5)
+                    return
+
+                self.last_code[str(message.guild.id)] = code
+
+                # Only play if user is in a voice channel
+                if auth_vc != None and not self.is_playing:
+
+                    # Set playing status
+                    self.is_playing = True
+
+                    # Create StreamPlayer
+                    vc = await auth_vc.channel.connect()
+
+                    # Play the audio file
+                    audiopath = PYPATH + 'sounds/elcodigoes.mp3'
+                    if THISOS=="Windows":
+                        vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
+                    else:
+                        vc.play(discord.FFmpegPCMAudio(source=audiopath))
+
+                    while vc.is_playing():
+                        await asyncio.sleep(.1)
+
+                    code += timesInt
+
+                    for letter in code:
+
+                        if letter in ascii_lowercase:
+                            audiopath = PYPATH + 'alphabet/' + letter + '.mp3'
+
+                            if letter == 'w':
+                                audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
+
+                            # Play the audio file
+                            if THISOS=="Windows":
+                                vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
+                            else:
+                                vc.play(discord.FFmpegPCMAudio(source=audiopath))
+
+                            while vc.is_playing():
+                                await asyncio.sleep(.1)
+
+                    # Disconnect after the player has finished
+                    await vc.disconnect()
+
+                    # Set playing status
+                    self.is_playing = False
+
+                elif self.is_playing:
+                    msg = await channel.send('I am already playing a sound!')
+                    await msg.delete(delay=5)
+
+                else:
+                    msg = await channel.send('User is not in a channel.')
+                    await msg.delete(delay=5)
 
         if content in ['!triple help', '!triple help keep']:
             msg = await channel.send('**COMMANDS:**\n`!triple fetch`: Syncs the project folder with the repository.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!repetir`: Repeats last saved code.\n`!triple stats`: Shows some information about the popularity of each audio.\n`!triple stats X`: Shows all statistics about soundbox *X*.\n`!triple help`: Shows this updated menu.\n`!triple help keep`: Shows and doesn\'t delete this menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.\n\n*Made by royalmo:* https://github.com/royalmo/TripleBot')
