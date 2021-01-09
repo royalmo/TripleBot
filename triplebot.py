@@ -34,6 +34,10 @@ with open(PYPATH + 'bot_settings.json', 'r') as json_token:
     filein = json.loads(json_token.read())
     COMMAND_LIST = filein['cmds']
 
+# Load help text
+with open(PYPATH + 'triple_help.txt', 'r') as helpin:
+    HELP_TEXT = helpin.read()
+
 # funcio de merda que transforma string a int: https://stackoverflow.com/questions/1265665/how-can-i-check-if-a-string-represents-an-int-without-using-try-except
 def isInt(s):
     try: 
@@ -119,6 +123,10 @@ def reload_cmds():
     with open(PYPATH + 'bot_settings.json', 'r') as json_token:
         filein = json.loads(json_token.read())
         COMMAND_LIST = filein['cmds']
+
+    # Reload help text
+    with open(PYPATH + 'triple_help.txt', 'r') as helpin:
+        HELP_TEXT = helpin.read()
 
     update_db_cmds()
 
@@ -447,7 +455,7 @@ class TskBot(discord.Client):
                     await msg.delete(delay=5)
 
         if content in ['!triple help', '!triple help keep']:
-            msg = await channel.send('**COMMANDS:**\n`!triple fetch`: Syncs the project folder with the repository.\n`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.\n`!repetir`: Repeats last saved code.\n`!triple stats`: Shows some information about the popularity of each audio.\n`!triple stats X`: Shows all statistics about soundbox *X*.\n`!triple help`: Shows this updated menu.\n`!triple help keep`: Shows and doesn\'t delete this menu.\n\n*Current soundbox commands:*\n`!' + '`, `!'.join(COMMAND_LIST) + '`.\n\n*Made by royalmo:* https://github.com/royalmo/TripleBot')
+            msg = await channel.send(HELP_TEXT.format('`!' + '`, `!'.join(COMMAND_LIST) + '`.'))
             if content != '!triple help keep':
                 await msg.delete(delay=25)
             await message.delete()
