@@ -411,7 +411,7 @@ class TripleBot(discord.Client):
                     # Create StreamPlayer
                     vc = await auth_vc.channel.connect()
 
-                    self.play_code(code, vc)
+                    await self.play_code(code, vc)
 
                     # Disconnect after the player has finished
                     await vc.disconnect()
@@ -433,7 +433,7 @@ class TripleBot(discord.Client):
                 code = splitted[1]
                 times = splitted[2]
 
-                if times in [1, 2, 3, 4, 5]:
+                if times in ["1", "2", "3", "4", "5"]:
                     timesInt = int(times)
                 else:
                     await self.send_to_ch( channel, times + " is not a number between 1 and 5.", 5 )
@@ -450,7 +450,7 @@ class TripleBot(discord.Client):
                     # Create StreamPlayer
                     vc = await auth_vc.channel.connect()
 
-                    self.play_code(code, vc, timesInt)
+                    await self.play_code(code, vc, timesInt)
 
                     # Disconnect after the player has finished
                     await vc.disconnect()
