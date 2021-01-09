@@ -355,10 +355,10 @@ class TripleBot(discord.Client):
                 self.playing_on.append(guild_id)
                 vc = await auth_vc.channel.connect()
 
-                audiopath = PYPATH + 'sounds/' + content[1:] + '_sound.mp3'
+                audiopath = PYPATH + 'sounds/' + content + '_sound.mp3'
 
                 await self.play_sound(audiopath, vc)
-                db_sound_played(content[1:])
+                db_sound_played(content)
 
                 # Disconnect after the player has finished
                 await vc.disconnect()
@@ -380,7 +380,7 @@ class TripleBot(discord.Client):
                     self.playing_on.append(guild_id)
                     vc = await auth_vc.channel.connect()
 
-                    self.play_code(code, vc)
+                    await self.play_code(code, vc)
 
                     await vc.disconnect()
                     self.playing_on.remove(guild_id)
