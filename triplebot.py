@@ -257,7 +257,7 @@ class TripleBot(discord.Client):
         """
 
         # Checks if message isn't from the bot itself and it is plain text. 
-        if message.author == self.user or message.type != discord.MessageType.default or len(message.content)<1:
+        if message.author == self.user or message.type != discord.MessageType.default or len(message.content)<2:
             return
 
         # As all the commands use ! at the beggining, we can forget about all the other messages.
@@ -265,26 +265,24 @@ class TripleBot(discord.Client):
             return
 
         # Defining some temp constants
-        content = message.content.lower()
+        content = message.content.lower()[1:]
         channel = message.channel
         auth_id = message.author.id
         auth_vc = message.author.voice
         guild_id = message.guild.id
 
-        # Single commands: !triple help
-        if content in ['!triple help', '!triple help keep']:
-
-            await self.send_to_ch(channel, HELP_TEXT, None if 'keep' in content else 25)
-
+        # Now that we have all the things, we can remove the message:
+        # We don't remove it in code commands as we want to see them on chat.
+        if content.split()[0] in COMMAND_LIST:
             await message.delete()
+
+        # Single commands: !triple help
+        if content in ['triple help', 'triple help keep']:
+            await self.send_to_ch(channel, HELP_TEXT, None if 'keep' in content else 25)
             return
 
         # Single commands: !triple fetch (reboot is for admin only)
-        if content in ["!triple fetch", "!triple fetch reboot"]:
-
-            # Delete the message to let the user see something is happening.
-            await message.delete()
-            
+        if content in ["triple fetch", "triple fetch reboot"]:
             # Fetch and pull from repository
             fetch_repo()
 
@@ -302,48 +300,53 @@ class TripleBot(discord.Client):
                     await self.send_to_ch(channel, 'Can\'t reboot!\nNo permmissions or bad OS.', 5)
 
         # Triple ranks: shows top 10 audios
-        if content == "!triple ranks":
+        if content == "triple ranks":
 
+            # Checking database
             db_response = db_get_most_times_played()
 
+            # Sending response
             await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 sounds.*' + ''.join(['\n**{0}**: has been played {1} times.'.format(command.upper(), times) for command, times in db_response]), 15)
 
-            await message.delete()
 
         # Triple stop (admin only). Stops the bot
-        if content == '!triple stop' and auth_id == ADMIN_ID:
+        if content == 'triple stop' and auth_id == ADMIN_ID:
 
             await self.send_to_ch(channel, "Stopping bot...", 2)
-
-            await message.delete()
-            await self.close()
+            await self.close() # Close the Discord connection
             return
 
         # Triple calla. Stops any sound and leaves voice_channels
-        if content == '!triple calla':
+        if content == 'triple calla':
             await self.send_to_ch(channel, "This isn't ready yet!", 5)
-            await message.delete()
             # TODO
 
         # Triple guilds (admin only): shows all guilds the bot is in.
-        if content == "!triple guilds" and auth_id == ADMIN_ID:
+        if content == "triple guilds" and auth_id == ADMIN_ID:
 
+            # Shows response
             await self.send_to_ch(channel, "**GUILDS WHERE I AM:**" + ''.join(['\n{0} - *Id: {1}*'.format(cguild.name, cguild.id) for cguild in self.guilds] ), 15)
-            await message.delete()
+            return
 
         # Triple stats [command]: shows all information of a sound
-        if content in ['!triple stats ' + comm for comm in COMMAND_LIST]:
+        if len(content)>13:
+            if content[:13] == 'triple stats ' and content[13:] in COMMAND_LIST:
 
-            db_response = db_get_single_info(content.split()[2])
-            await self.send_to_ch(channel, '**TripleBot Command Stats**: *{0}*\nHas been played {1} times.\nTripleBot is keeping track of this sound since *{2}*\nLast time played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3])) if int(db_response[3]) != 0 else "Hasn't been played yet."  ), 15 )
+                # Checks database
+                db_response = db_get_single_info(content.split()[2])
 
-            await message.delete()
+                # Sends response
+                await self.send_to_ch(channel, '**TripleBot Command Stats**: *{0}*\nHas been played {1} times.\nTripleBot is keeping track of this sound since *{2}*\nLast time played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3])) if int(db_response[3]) != 0 else "Hasn't been played yet."  ), 15 )
 
         # Triple stats and triple stats [user]: shows all info about that person.
-        # TODO
+        if 'triple stats' in content:
+            await self.send_to_ch(channel, "This isn't ready yet!", 5)
+            # TODO
+
+        # FROM NOW ON MUSIC WILL BE PLAYED
 
         # Sound commands
-        if content in ['!' + comm for comm in COMMAND_LIST]:
+        if content in COMMAND_LIST:
 
             # Only play music if user is in a voice channel
             if auth_vc != None and guild_id not in self.playing_on:
@@ -367,28 +370,19 @@ class TripleBot(discord.Client):
             else:
                 await self.send_to_ch(channel, 'User is not in a channel.', 5)
 
-            await message.delete()
             return
 
-        if content == "!repetir":
-            if str(message.guild.id) in self.last_code:
-                code = self.last_code[str(message.guild.id)]
+        if content == "repetir":
+            if str(guild_id) in self.last_code:
+                code = self.last_code[str(guild_id)]
 
-                # Only play if user is in a voice channel
                 if auth_vc!= None and guild_id not in self.playing_on:
-
-                    # Set playing status
                     self.playing_on.append(guild_id)
-
-                    # Create StreamPlayer
                     vc = await auth_vc.channel.connect()
 
                     self.play_code(code, vc)
 
-                    # Disconnect after the player has finished
                     await vc.disconnect()
-
-                    # Set playing status
                     self.playing_on.remove(guild_id)
 
                 elif guild_id in self.playing_on:
@@ -397,19 +391,16 @@ class TripleBot(discord.Client):
                 else:
                     await self.send_to_ch(channel, 'User is not in a channel.', 5)
 
-                # I don't delete de msg cuz i want to keep the code on the chat.
-                await message.delete()
                 return
 
             else:
                 await self.send_to_ch(channel, 'I don\'t have anything to repeat!', 5)
-                await message.delete()
                 return
 
         if len(content.split())==2:
-            if content.split()[0] in ["!codi", "!code"]:
+            if content.split()[0] in ["codi", "code"]:
                 code = content.split()[1]
-                self.last_code[str(message.guild.id)] = code
+                self.last_code[str(guild_id)] = code
 
                 # Only play if user is in a voice channel
                 if auth_vc != None and guild_id not in self.playing_on:
@@ -434,13 +425,11 @@ class TripleBot(discord.Client):
                 else:
                     await self.send_to_ch(channel, 'User is not in a channel.', 5)
 
-                # I don't delete de msg cuz i want to keep the code on the chat.
-                # await message.delete()
                 return
 
         if len(content.split())==3:
             splitted = content.split()
-            if splitted[0] in ["!codi", "!code"]:
+            if splitted[0] in ["codi", "code"]:
                 code = splitted[1]
                 times = splitted[2]
 
@@ -450,7 +439,7 @@ class TripleBot(discord.Client):
                     await self.send_to_ch( channel, times + " is not a number between 1 and 5.", 5 )
                     return
 
-                self.last_code[str(message.guild.id)] = code
+                self.last_code[str(guild_id)] = code
 
                 # Only play if user is in a voice channel
                 if auth_vc != None and guild_id not in self.playing_on:

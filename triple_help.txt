@@ -1,10 +1,16 @@
 **COMMANDS:**
+`!triple rank`: Shows the top 10 sounds, like a ranking.
+`!triple calla`: Please, don't do this, be nice with me :(
 `!triple fetch`: Syncs the project folder with the repository.
+
 `!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan a letters-only code.
 `!codi XXXXXX 3`: Speak the code 3 times (must be a number between 1 and 5)
 `!repetir`: Repeats last saved code.
-`!triple stats`: Shows the most popular sounds, like a ranking.
+
+`!triple stats`: Shows your stats.
 `!triple stats X`: Shows all statistics about soundbox *X*.
+`!triple stats @someone`: Shows statistics about @someone.
+
 `!triple help`: Shows this updated menu.
 `!triple help keep`: Shows and doesn't delete this menu.
 
