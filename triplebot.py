@@ -395,7 +395,7 @@ class TskBot(discord.Client):
                     while vc.is_playing():
                         await asyncio.sleep(.1)
 
-                    code += timesInt
+                    code = code*timesInt
 
                     for letter in code:
 
