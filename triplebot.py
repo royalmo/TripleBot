@@ -226,6 +226,9 @@ class TskBot(discord.Client):
             await message.delete()
             await self.close()
 
+        if content == '!triple calla':
+            pass
+
         if content == "!triple guilds" and auth_id == ADMIN_ID:
 
             msg = await channel.send("**GUILDS WHERE I AM:**" + ''.join(['\n{0} - *Id: {1}*'.format(cguild.name, cguild.id) for cguild in self.guilds] ))
@@ -391,6 +394,7 @@ class TskBot(discord.Client):
 
                     # Play the audio file
                     audiopath = PYPATH + 'sounds/elcodigoes.mp3'
+                    repeatpath = PYPATH + 'sounds/repeatcode.mp3'
                     if THISOS=="Windows":
                         vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
                     else:
@@ -399,21 +403,31 @@ class TskBot(discord.Client):
                     while vc.is_playing():
                         await asyncio.sleep(.1)
 
-                    code = code*timesInt
+                    while timesInt != 0:
+                        timesInt -= 1
 
-                    for letter in code:
+                        for letter in code:
 
-                        if letter in ascii_lowercase:
-                            audiopath = PYPATH + 'alphabet/' + letter + '.mp3'
+                            if letter in ascii_lowercase:
+                                audiopath = PYPATH + 'alphabet/' + letter + '.mp3'
 
-                            if letter == 'w':
-                                audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
+                                if letter == 'w':
+                                    audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
 
-                            # Play the audio file
+                                # Play the audio file
+                                if THISOS=="Windows":
+                                    vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
+                                else:
+                                    vc.play(discord.FFmpegPCMAudio(source=audiopath))
+
+                                while vc.is_playing():
+                                    await asyncio.sleep(.1)
+
+                        if timesInt > 0: #Play 'permitame repetir'
                             if THISOS=="Windows":
-                                vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
+                                    vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=repeatpath))
                             else:
-                                vc.play(discord.FFmpegPCMAudio(source=audiopath))
+                                vc.play(discord.FFmpegPCMAudio(source=repeatpath))
 
                             while vc.is_playing():
                                 await asyncio.sleep(.1)
