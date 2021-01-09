@@ -362,13 +362,17 @@ class TskBot(discord.Client):
                 # await message.delete()
                 return
         if len(content.split())==3:
-            laputaeric = content.split()
-            if laputaeric[0] in ["!codi", "!code"]:
-                code = laputaeric[1].lower()
-                times = laputaeric[2]
+            splitted = content.split()
+            if splitted[0] in ["!codi", "!code"]:
+                code = splitted[1].lower()
+                times = splitted[2]
 
                 if isInt(times):
                     timesInt = int(times)
+                    if timesInt < 1 or timesInt > 5 : # Si, limit 5 que tampoc es plan de quedarnos sords.
+                        msg = await channel.send(str(times) + " is not a decent number.")
+                        await msg.delete(delay=5)
+                        return
                 else:
                     msg = await channel.send(str(times) + " is not a number.")
                     await msg.delete(delay=5)
