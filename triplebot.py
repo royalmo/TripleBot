@@ -130,8 +130,11 @@ def reload_cmds():
 
     update_db_cmds()
 
-class TskBot(discord.Client):
+class TripleBot(discord.Client):
     async def on_ready(self):
+        """
+        This function is executed when the bot just connected to Discord.
+        """
         # Print info message.
         print(f'Connected to Discord!\n\nBot username: {self.user}\n')
 
@@ -141,7 +144,26 @@ class TskBot(discord.Client):
         self.is_playing = False
         self.last_code = {}
 
+    async def play_sound(self, audio_path, voice_channel):
+        """
+        This function will play a sound on a voice channel, and will wait for it to stop.
+
+        `voice_channel`: A VoiceChannel object where the bot is connected to.
+
+        `audio_path`: A string with the absolute path of the mp3 file.
+        """
+        if THISOS=="Windows":
+                    voice_channel.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audio_path))
+        else:
+            voice_channel.play(discord.FFmpegPCMAudio(source=audio_path))
+
+        while voice_channel.is_playing():
+            await asyncio.sleep(.1)
+
     async def on_message(self, message):
+        """
+        This function is executed everytime a message is received from anyone and from any channel.
+        """
 
         # Checks if message isn't from the bot itself and it is plain text. 
         if message.author == self.user or message.type != discord.MessageType.default:
@@ -166,15 +188,8 @@ class TskBot(discord.Client):
 
                 audiopath = PYPATH + 'sounds/' + content[1:] + '_sound.mp3'
 
-                # Play the audio file
-                if THISOS=="Windows":
-                    vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
-                else:
-                    vc.play(discord.FFmpegPCMAudio(source=audiopath))
-
+                await self.play_sound(audiopath, vc)
                 db_command_played(content[1:])
-                while vc.is_playing():
-                    await asyncio.sleep(.1)
 
                 # Disconnect after the player has finished
                 await vc.disconnect()
@@ -265,13 +280,8 @@ class TskBot(discord.Client):
 
                     # Play the audio file
                     audiopath = PYPATH + 'sounds/elcodigoes.mp3'
-                    if THISOS=="Windows":
-                        vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
-                    else:
-                        vc.play(discord.FFmpegPCMAudio(source=audiopath))
 
-                    while vc.is_playing():
-                        await asyncio.sleep(.1)
+                    await self.play_sound(audiopath, vc)
 
                     for letter in code:
 
@@ -282,13 +292,7 @@ class TskBot(discord.Client):
                                 audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
 
                             # Play the audio file
-                            if THISOS=="Windows":
-                                vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
-                            else:
-                                vc.play(discord.FFmpegPCMAudio(source=audiopath))
-
-                            while vc.is_playing():
-                                await asyncio.sleep(.1)
+                            await self.play_sound(audiopath, vc)
 
                     # Disconnect after the player has finished
                     await vc.disconnect()
@@ -330,13 +334,8 @@ class TskBot(discord.Client):
 
                     # Play the audio file
                     audiopath = PYPATH + 'sounds/elcodigoes.mp3'
-                    if THISOS=="Windows":
-                        vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
-                    else:
-                        vc.play(discord.FFmpegPCMAudio(source=audiopath))
-
-                    while vc.is_playing():
-                        await asyncio.sleep(.1)
+                    
+                    await self.play_sound(audiopath, vc)
 
                     for letter in code:
 
@@ -347,13 +346,7 @@ class TskBot(discord.Client):
                                 audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
 
                             # Play the audio file
-                            if THISOS=="Windows":
-                                vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
-                            else:
-                                vc.play(discord.FFmpegPCMAudio(source=audiopath))
-
-                            while vc.is_playing():
-                                await asyncio.sleep(.1)
+                            await self.play_sound(audiopath, vc)
 
                     # Disconnect after the player has finished
                     await vc.disconnect()
@@ -403,13 +396,8 @@ class TskBot(discord.Client):
                     # Play the audio file
                     audiopath = PYPATH + 'sounds/elcodigoes.mp3'
                     repeatpath = PYPATH + 'sounds/repeatcode.mp3'
-                    if THISOS=="Windows":
-                        vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
-                    else:
-                        vc.play(discord.FFmpegPCMAudio(source=audiopath))
-
-                    while vc.is_playing():
-                        await asyncio.sleep(.1)
+                    
+                    await self.play_sound(audiopath, vc)
 
                     while timesInt != 0:
                         timesInt -= 1
@@ -423,22 +411,10 @@ class TskBot(discord.Client):
                                     audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
 
                                 # Play the audio file
-                                if THISOS=="Windows":
-                                    vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audiopath))
-                                else:
-                                    vc.play(discord.FFmpegPCMAudio(source=audiopath))
-
-                                while vc.is_playing():
-                                    await asyncio.sleep(.1)
+                                await self.play_sound(audiopath, vc)
 
                         if timesInt > 0: #Play 'permitame repetir'
-                            if THISOS=="Windows":
-                                    vc.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=repeatpath))
-                            else:
-                                vc.play(discord.FFmpegPCMAudio(source=repeatpath))
-
-                            while vc.is_playing():
-                                await asyncio.sleep(.1)
+                            await self.play_sound(repeatpath, vc)
 
                     # Disconnect after the player has finished
                     await vc.disconnect()
@@ -455,7 +431,10 @@ class TskBot(discord.Client):
                     await msg.delete(delay=5)
 
         if content in ['!triple help', '!triple help keep']:
-            msg = await channel.send(HELP_TEXT.format('`!' + '`, `!'.join(COMMAND_LIST) + '`.'))
+            commandhelps = '`!' + '`, `!'.join(COMMAND_LIST) + '`.'
+            msg = await channel.send(HELP_TEXT.format(commandhelps))
+
+            # Deletes de msg if needed only
             if content != '!triple help keep':
                 await msg.delete(delay=25)
             await message.delete()
@@ -470,9 +449,10 @@ if __name__ == "__main__":
     
     print("Database updated!\nLoading settings and connecting to Discord...")
 
-    # Runs bot after 30 seconds of delay. Why we do this? Because when raspi boots, network is ready some seconds after rc.local is executed, so if we don't wait the program crashes.
+    # Runs bot after 30 seconds of delay.
+    # Why we do this? Because when raspi boots, network becomes ready onnly some seconds after rc.local is executed, so if we don't wait the program crashes.
     sleep(30)
 
     # Starting the bot
-    mainbot = TskBot()
+    mainbot = TripleBot()
     mainbot.run(DISCORD_TOKEN)
