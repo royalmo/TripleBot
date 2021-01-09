@@ -14,41 +14,36 @@ from pathlib import Path
 from time import sleep
 from random import choice
 from string import ascii_lowercase
-from platform import system
+from platform import system as operative_system
 from os import system as terminal
 
+# Defining some constants
 PYPATH = str(Path(__file__).parent.absolute()) + "/"
-THISOS = system()
+THISOS = operative_system()
 WINDOWS_FFMPEG_PATH = "C:/ffmpeg/bin/ffmpeg.exe"
+MP3_ELCODIGO_PATH = PYPATH + 'sounds/elcodigoes.mp3'
+MP3_PERMITAME_PATH = PYPATH + 'sounds/repeatcode.mp3'
+DB_PATH = PYPATH + "db/stats.db"
 
-# The admin id is the only discord user that can restart the hosted pc (this will only work in ubuntu)
-ADMIN_ID = 354215919318466561
+# Putting placeholders for COMMAND_LIST and HELP_TEXT.
+# We will set them to the correct values later
+COMMAND_LIST, HELP_TEXT = '', ''
 
-# Loads settings
-with open(PYPATH + 'bot_token.json', 'r') as json_token:
-    filein = json.loads(json_token.read())
-    DISCORD_TOKEN = filein['token']
+# The admin id is the only discord user that can restart the hosted pc
+# (this will only work in THISOS=='Linux' systems)
+ADMIN_ID = 354215919318466561 # Discord user: royalmo#5186
 
-# Load commands
-with open(PYPATH + 'bot_settings.json', 'r') as json_token:
-    filein = json.loads(json_token.read())
-    COMMAND_LIST = filein['cmds']
 
-# Load help text
-with open(PYPATH + 'triple_help.txt', 'r') as helpin:
-    HELP_TEXT = helpin.read()
-
-# funcio de merda que transforma string a int: https://stackoverflow.com/questions/1265665/how-can-i-check-if-a-string-represents-an-int-without-using-try-except
-def isInt(s):
-    try: 
-        int(s)
-        return True
-    except ValueError:
-        return False
+## DATABASE RELATED FUNCTIONS ##
 
 def update_db_cmds():
+    """
+    This function is runned on every fetch and at the start of the program.
+    It creates the database and the table if they don't exist.
+    It adds all the current commands that aren't already on the db.
+    """
     # Database settings
-    conn = sqlite3.connect(PYPATH + "db/stats.db")
+    conn = sqlite3.connect(DB_PATH)
     conn_cursor = conn.cursor()
     conn_cursor.execute('SELECT name from sqlite_master where type= "table"')
     tables = [t[0] for t in conn_cursor.fetchall()]
@@ -74,26 +69,49 @@ def update_db_cmds():
     conn.close()
 
 def db_get_single_info(commandname):
+    """
+    Returns all database information (except ID) of a specific command.
+    If the command is not found, nothing is returned, so it may cause an IndexError somewhere else.
+
+    Ironic example of `db_get_single_info('triple')`
+
+    `['triple', 10, 94385734, 18907465]`
+
+    Remember that timestamps are on Epoch seconds.
+    """
     # Database settings
-    conn = sqlite3.connect(PYPATH + "db/stats.db")
+    conn = sqlite3.connect(DB_PATH)
     conn_cursor = conn.cursor()
 
     # Get current commands
     conn_cursor.execute("SELECT name, times_played, added_at, last_played FROM Sounds WHERE name='" + commandname + "'")
-    response = conn_cursor.fetchall()[0]
+
+    # As the '[0]' could cause an index error, we will do it safely
+    response = conn_cursor.fetchall()
+    if len(response)>0:
+        response = response[0]
+    else:
+        # We create a random return so we see there is some error elsewhere
+        # and there is no exceptions.
+        response = ['IndexError', 0, 0, 0]
 
     # Close the connection
     conn.close()
 
     return response
 
-def db_get_times_played():
+def db_get_most_times_played():
+    """
+    This function returns a list of the 10 most played sounds. Example:
+
+    `(['triple', 29], ['rot', 27], ...)`
+    """
     # Database settings
-    conn = sqlite3.connect(PYPATH + "db/stats.db")
+    conn = sqlite3.connect(DB_PATH)
     conn_cursor = conn.cursor()
 
     # Get current commands
-    conn_cursor.execute("SELECT name, times_played FROM Sounds")
+    conn_cursor.execute("SELECT name, times_played FROM Sounds ORDER BY times_played DESC LIMIT 10")
     response = conn_cursor.fetchall()
 
     # Close the connection
@@ -101,10 +119,14 @@ def db_get_times_played():
 
     return response
 
-def db_command_played(commandname):
-    # Database settings
-    conn = sqlite3.connect(PYPATH + "db/stats.db")
+def db_sound_played(commandname):
+    """
+    This function is called after every sound is played. It adds on the database the time it has been played and updates the count.
 
+    Comandname sould be a string with the comand. If the command doesn't exist, an IndexError will be thrown.
+    """
+    # Database settings
+    conn = sqlite3.connect(DB_PATH)
     conn_cursor = conn.cursor()
 
     # Get current commands
@@ -118,17 +140,42 @@ def db_command_played(commandname):
     conn.close()
 
 
-def reload_cmds():
+## UPDATE RELATED FUNCTIONS ##
+
+def update_cmd_list():
+    """
+    This function updates COMMAND_LIST, and it is executed in fetch_repo and at the start of the program.
+    """
     global COMMAND_LIST
     with open(PYPATH + 'bot_settings.json', 'r') as json_token:
         filein = json.loads(json_token.read())
         COMMAND_LIST = filein['cmds']
 
-    # Reload help text
+def update_help_menu():
+    """
+    This function updates HELP_MENU, and it is executed in fetch_repo and at the start of the program.
+    """
+    global HELP_TEXT
+    commandhelps = '`!' + '`, `!'.join(COMMAND_LIST) + '`.'
     with open(PYPATH + 'triple_help.txt', 'r') as helpin:
-        HELP_TEXT = helpin.read()
+        HELP_TEXT = helpin.read().format(commandhelps)
 
+def fetch_repo(download=True):
+    """
+    This function is called on `!triple fetch` and `!triple fetch reboot`.
+    It downloads repository updates, and updates the command list, the help menu and the database.
+    """
+    # Get new files from GitHub if download is True
+    if download:
+        terminal("cd " + PYPATH + " && git fetch && git pull")
+
+    # Update commands, help menu and database
+    update_cmd_list()
+    update_help_menu()
     update_db_cmds()
+
+
+## DISCORD CLASS ##
 
 class TripleBot(discord.Client):
     async def on_ready(self):
@@ -160,6 +207,37 @@ class TripleBot(discord.Client):
         while voice_channel.is_playing():
             await asyncio.sleep(.1)
 
+    async def play_code(self, code, voice_channel, times=1):
+        """
+        This function will play a sound on a voice channel, and will wait for it to stop.
+
+        `voice_channel`: A VoiceChannel object where the bot is connected to.
+
+        `code`: The code it needs to play
+
+        `times`: The times it needs to play that code (default: 1)
+        """
+        # First we play the sound 'el codigo es'
+        await self.play_sound(MP3_ELCODIGO_PATH, voice_channel)
+
+        # While for how many times we play the code
+        while times>0:
+            times -= 1
+
+            for letter in code:
+
+                if letter in ascii_lowercase:
+                    audiopath = PYPATH + 'alphabet/' + letter + '.mp3'
+
+                    if letter == 'w':
+                        audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
+
+                    # Play the audio file
+                    await self.play_sound(audiopath, voice_channel)
+
+            if times > 0: #Play 'permitame repetir'
+                await self.play_sound(MP3_PERMITAME_PATH, voice_channel)
+
     async def on_message(self, message):
         """
         This function is executed everytime a message is received from anyone and from any channel.
@@ -169,75 +247,49 @@ class TripleBot(discord.Client):
         if message.author == self.user or message.type != discord.MessageType.default:
             return
 
-        # Defining some constants
-        content = message.content
+        # Defining some temp constants
+        content = message.content.lower()
         channel = message.channel
         auth_id = message.author.id
         auth_vc = message.author.voice
 
-        if content in ['!' + comm for comm in COMMAND_LIST]:
+        # Single commands: !triple help
+        if content in ['!triple help', '!triple help keep']:
+            msg = await channel.send(HELP_TEXT)
 
-            # Only play music if user is in a voice channel
-            if auth_vc != None and not self.is_playing:
-
-                # Set playing status
-                self.is_playing = True
-
-                # Create StreamPlayer
-                vc = await auth_vc.channel.connect()
-
-                audiopath = PYPATH + 'sounds/' + content[1:] + '_sound.mp3'
-
-                await self.play_sound(audiopath, vc)
-                db_command_played(content[1:])
-
-                # Disconnect after the player has finished
-                await vc.disconnect()
-
-                # Set playing status
-                self.is_playing = False
-
-            elif self.is_playing:
-                msg = await channel.send('I am already playing a sound!')
-                await msg.delete(delay=5)
-
-            else:
-                msg = await channel.send('User is not in a channel.')
-                await msg.delete(delay=5)
-
+            # Deletes de msg if needed only
+            if 'keep' not in content:
+                await msg.delete(delay=25)
             await message.delete()
             return
 
+        # Single commands: !triple fetch
         if content in ["!triple fetch", "!triple fetch reboot"]:
 
             # Delete the message to let the user see something is happening.
             await message.delete()
             
             # Fetch and pull from repository
-            terminal("cd " + PYPATH + " && git fetch && git pull")
-            reload_cmds()
+            fetch_repo()
 
             # Shows a message
-            msg = await channel.send('Fetched!')
+            msg = await channel.send('Fetched!' + ('\nRebooting...' if 'reboot' in content else ''))
             await msg.delete(delay=5)
 
             # Reboot if in linux and if requester is admin.
             if content == "!triple fetch reboot":
                 if auth_id==ADMIN_ID and THISOS=="Linux":
 
-                    msg = await channel.send('Rebooting in 5 seconds!')
-                    await msg.delete(delay=4)
-                    asyncio.sleep(5)
                     await self.close() # Close the Discord connection
                     terminal("sudo reboot")
 
                 else:
-                    msg = await channel.send('Can\'t reboot!')
+                    msg = await channel.send('Can\'t reboot!\nNo permmissions or bad OS.')
                     await msg.delete(delay=5)
 
         if content == "!triple stats":
 
-            db_response = db_get_times_played()
+            db_response = db_get_most_times_played()
             msg = await channel.send('**TRIPLE STATS**' + ''.join(['\n*{0}* has been played {1} times.'.format(command, times) for command, times in db_response]))
             await msg.delete(delay=15)
             await message.delete()
@@ -260,10 +312,43 @@ class TripleBot(discord.Client):
 
         if content in ['!triple stats ' + comm for comm in COMMAND_LIST]:
 
-            db_response = db_get_single_info(''.join(content.split()[2:]))
+            db_response = db_get_single_info(content.split()[2])
             msg = await channel.send('**TRIPLE STATS**: *{0}*\nHas been played {1} times.\nTripleBot is keeping track of this sound since *{2}*\nLast time played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3])) if int(db_response[3]) != 0 else "Hasn't been played."  ) )
             await msg.delete(delay=15)
             await message.delete()
+
+        if content in ['!' + comm for comm in COMMAND_LIST]:
+
+            # Only play music if user is in a voice channel
+            if auth_vc != None and not self.is_playing:
+
+                # Set playing status
+                self.is_playing = True
+
+                # Create StreamPlayer
+                vc = await auth_vc.channel.connect()
+
+                audiopath = PYPATH + 'sounds/' + content[1:] + '_sound.mp3'
+
+                await self.play_sound(audiopath, vc)
+                db_sound_played(content[1:])
+
+                # Disconnect after the player has finished
+                await vc.disconnect()
+
+                # Set playing status
+                self.is_playing = False
+
+            elif self.is_playing:
+                msg = await channel.send('I am already playing a sound!')
+                await msg.delete(delay=5)
+
+            else:
+                msg = await channel.send('User is not in a channel.')
+                await msg.delete(delay=5)
+
+            await message.delete()
+            return
 
         if content == "!repetir":
             if str(message.guild.id) in self.last_code:
@@ -278,21 +363,7 @@ class TripleBot(discord.Client):
                     # Create StreamPlayer
                     vc = await auth_vc.channel.connect()
 
-                    # Play the audio file
-                    audiopath = PYPATH + 'sounds/elcodigoes.mp3'
-
-                    await self.play_sound(audiopath, vc)
-
-                    for letter in code:
-
-                        if letter in ascii_lowercase:
-                            audiopath = PYPATH + 'alphabet/' + letter + '.mp3'
-
-                            if letter == 'w':
-                                audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
-
-                            # Play the audio file
-                            await self.play_sound(audiopath, vc)
+                    self.play_code(code, vc)
 
                     # Disconnect after the player has finished
                     await vc.disconnect()
@@ -320,7 +391,7 @@ class TripleBot(discord.Client):
 
         if len(content.split())==2:
             if content.split()[0] in ["!codi", "!code"]:
-                code = content.split()[1].lower()
+                code = content.split()[1]
                 self.last_code[str(message.guild.id)] = code
 
                 # Only play if user is in a voice channel
@@ -332,21 +403,7 @@ class TripleBot(discord.Client):
                     # Create StreamPlayer
                     vc = await auth_vc.channel.connect()
 
-                    # Play the audio file
-                    audiopath = PYPATH + 'sounds/elcodigoes.mp3'
-                    
-                    await self.play_sound(audiopath, vc)
-
-                    for letter in code:
-
-                        if letter in ascii_lowercase:
-                            audiopath = PYPATH + 'alphabet/' + letter + '.mp3'
-
-                            if letter == 'w':
-                                audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
-
-                            # Play the audio file
-                            await self.play_sound(audiopath, vc)
+                    self.play_code(code, vc)
 
                     # Disconnect after the player has finished
                     await vc.disconnect()
@@ -368,17 +425,13 @@ class TripleBot(discord.Client):
         if len(content.split())==3:
             splitted = content.split()
             if splitted[0] in ["!codi", "!code"]:
-                code = splitted[1].lower()
+                code = splitted[1]
                 times = splitted[2]
 
-                if isInt(times):
+                if times in [1, 2, 3, 4, 5]:
                     timesInt = int(times)
-                    if timesInt < 1 or timesInt > 5 : # Si, limit 5 que tampoc es plan de quedarnos sords.
-                        msg = await channel.send(str(times) + " is not a decent number.")
-                        await msg.delete(delay=5)
-                        return
                 else:
-                    msg = await channel.send(str(times) + " is not a number.")
+                    msg = await channel.send( times + " is not a number between 1 and 5." )
                     await msg.delete(delay=5)
                     return
 
@@ -393,28 +446,7 @@ class TripleBot(discord.Client):
                     # Create StreamPlayer
                     vc = await auth_vc.channel.connect()
 
-                    # Play the audio file
-                    audiopath = PYPATH + 'sounds/elcodigoes.mp3'
-                    repeatpath = PYPATH + 'sounds/repeatcode.mp3'
-                    
-                    await self.play_sound(audiopath, vc)
-
-                    while timesInt != 0:
-                        timesInt -= 1
-
-                        for letter in code:
-
-                            if letter in ascii_lowercase:
-                                audiopath = PYPATH + 'alphabet/' + letter + '.mp3'
-
-                                if letter == 'w':
-                                    audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
-
-                                # Play the audio file
-                                await self.play_sound(audiopath, vc)
-
-                        if timesInt > 0: #Play 'permitame repetir'
-                            await self.play_sound(repeatpath, vc)
+                    self.play_code(code, vc, timesInt)
 
                     # Disconnect after the player has finished
                     await vc.disconnect()
@@ -430,28 +462,28 @@ class TripleBot(discord.Client):
                     msg = await channel.send('User is not in a channel.')
                     await msg.delete(delay=5)
 
-        if content in ['!triple help', '!triple help keep']:
-            commandhelps = '`!' + '`, `!'.join(COMMAND_LIST) + '`.'
-            msg = await channel.send(HELP_TEXT.format(commandhelps))
-
-            # Deletes de msg if needed only
-            if content != '!triple help keep':
-                await msg.delete(delay=25)
-            await message.delete()
-            return
-
-
+# Main program
 if __name__ == "__main__":
 
     # Welcome message
-    print("*"*55 + "\n" + " "*9 + "Triple BOT - Discord server manager\n" + "*"*55 + "\n\nUpdating database...")
-    update_db_cmds()
-    
+    print("*"*55 + "\n" + " "*11 + "Triple BOT - Discord soundbox bot\n" + "*"*55 + "\n\nLoading token...")
+
+    # Loading Discord token
+    with open(PYPATH + 'bot_token.json', 'r') as json_token:
+        filein = json.loads(json_token.read())
+        DISCORD_TOKEN = filein['token']
+
+    print("Token loaded!\nUpdating database...")
+
+    fetch_repo(download=False)
+
     print("Database updated!\nLoading settings and connecting to Discord...")
 
     # Runs bot after 30 seconds of delay.
     # Why we do this? Because when raspi boots, network becomes ready onnly some seconds after rc.local is executed, so if we don't wait the program crashes.
-    sleep(30)
+    # So, we only need to do this when we are on linux.
+    if THISOS == "Linux":
+        sleep(30)
 
     # Starting the bot
     mainbot = TripleBot()
