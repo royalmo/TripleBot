@@ -32,7 +32,7 @@ COMMAND_LIST, HELP_TEXT = '', ''
 
 # The admin id is the only discord user that can restart the hosted pc
 # (this will only work in THISOS=='Linux' systems)
-ADMIN_ID = 354215919318466561 # Discord user: royalmo#5186
+ADMIN_ID = [354215919318466561] # Discord user: royalmo#5186
 
 
 ## DATABASE RELATED FUNCTIONS ##
@@ -367,7 +367,7 @@ class TripleBot(discord.Client):
         """
         # First, we whitelist the admin xD
         # If this is commented, it's because I am debugging timeouts.
-        if user_id == str(ADMIN_ID):
+        if int(user_id) in ADMIN_ID:
             return True
 
         # Gets the time of the request in seconds
@@ -595,7 +595,7 @@ class TripleBot(discord.Client):
 
             # Restart if requester is admin.
             if 'restart' in content:
-                if auth_id==ADMIN_ID:
+                if auth_id in ADMIN_ID:
 
                     await self.close() # Close the Discord connection
                     # Restarts the python application
@@ -627,7 +627,7 @@ class TripleBot(discord.Client):
             return
 
         # Triple stop (admin only). Stops the bot
-        if content == 'triple stop' and auth_id == ADMIN_ID:
+        if content == 'triple stop' and auth_id in ADMIN_ID:
 
             await self.send_to_ch(channel, "Stopping bot...", 2)
             await self.close() # Close the Discord connection
@@ -635,19 +635,22 @@ class TripleBot(discord.Client):
 
         # Triple calla. Stops any sound and leaves voice_channels
         if content == 'triple calla':
-            self.shutup_at.append(guild_id)
-            await self.send_to_ch(channel, "Nooo please! Why have you done that, {0}?".format(self.get_user(auth_id).mention), 5)
+            if guild_id in self.playing_on:
+                self.shutup_at.append(guild_id)
+                await self.send_to_ch(channel, "Nooo please! Why have you done that, {0}?".format(self.get_user(auth_id).mention), 5)
+            else:
+                await self.send_to_ch(channel, "I'm already quiet u bastard", 5)
             return
 
         # Triple guilds (admin only): shows all guilds the bot is in.
-        if content == "triple guilds" and auth_id == ADMIN_ID:
+        if content == "triple guilds" and auth_id in ADMIN_ID:
 
             # Shows response
             await self.send_to_ch(channel, "**GUILDS WHERE I AM:**" + ''.join(['\n{0} - *Id: {1}*'.format(cguild.name, cguild.id) for cguild in self.guilds] ), 15)
             return
 
         # Triple guilds (admin only): shows all guilds the bot is in.
-        if content == "triple guilds this" and auth_id == ADMIN_ID:
+        if content == "triple guilds this" and auth_id in ADMIN_ID:
 
             # Check database
             db_response = db_get_guild_stats(guild_id)
@@ -664,7 +667,7 @@ class TripleBot(discord.Client):
             return
 
         # Triple guilds (admin only): shows all guilds the bot is in.
-        if content == "triple guilds ranks" and auth_id == ADMIN_ID:
+        if content == "triple guilds ranks" and auth_id in ADMIN_ID:
 
             # Checking database
             db_response = db_get_best_guilds()
