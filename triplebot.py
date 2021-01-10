@@ -361,9 +361,9 @@ class TripleBot(discord.Client):
         If return is `True`, a command will be added to the user list.
 
         Maximum number of messages in every case:
-        - 1 sound every 20 secs.
-        - 5 sounds every 10 mins (600 secs).
-        - 15 sounds every 30 mins (1800 secs).
+        - 2 sounds every 30 secs.
+        - 15 sounds every 10 mins (600 secs).
+        - 30 sounds every 30 mins (1800 secs).
         """
         # First, we whitelist the admin xD
         # If this is commented, it's because I am debugging timeouts.
@@ -385,7 +385,7 @@ class TripleBot(discord.Client):
         # We remove all sounds that are 1800 seconds older than current time
         # They dont affect timeouts and will save us lots of ram.
         counters = [0, 0, 0]
-        limits = [1, 5, 15]
+        limits = [2, 15, 30]
         new_timings = []
 
         # We do this for each time
@@ -396,7 +396,7 @@ class TripleBot(discord.Client):
                 counters[2] += 1
             if diff < 600:
                 counters[1] += 1
-            if diff < 20:
+            if diff < 30:
                 counters[0] += 1
 
         # Print for debugging
