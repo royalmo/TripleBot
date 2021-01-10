@@ -402,7 +402,7 @@ class TripleBot(discord.Client):
                 if auth_id==ADMIN_ID and THISOS=="Linux":
 
                     await self.close() # Close the Discord connection
-                    terminal("sudo reboot")
+                    terminal('sudo screen -S triplebot -X quit && sudo screen -dmS triplebot -X stuff "sudo python3 ' + PYPATH + 'triplebot.py fast"')
 
                 else:
                     await self.send_to_ch(channel, 'Can\'t reboot!\nNo permmissions or bad OS.', 5)
