@@ -59,6 +59,11 @@ def update_db_cmds():
         print("Table Users not found, creating one.")
         conn_cursor.execute("CREATE TABLE Users(user_id integer PRIMARY KEY,  sounds_played integer, added_at integer, last_played integer)")
 
+    # Creates table if Guilds doesn't exist
+    if 'Guilds' not in tables:
+        print("Table Guilds not found, creating one.")
+        conn_cursor.execute("CREATE TABLE Guilds(guild_id integer PRIMARY KEY,  sounds_played integer, added_at integer, last_played integer)")
+
     # Get current commands
     conn_cursor.execute("SELECT name from Sounds")
     sql_commands = [c[0] for c in conn_cursor.fetchall()]
@@ -136,6 +141,75 @@ def db_get_user_stats(user_id):
     # If user is not found, return None
     return None
 
+def db_get_guild_stats(guild_id):
+    """
+    Returns all database information of a specific guild.
+    If the command is not found, `None` is returned, so it may cause an IndexError somewhere else.
+
+    Ironic example of `db_get_guild_stats(23592385987235239)`
+
+    `[23592385987235239, 10, 94385734, 18907465]`
+
+    Remember that timestamps are on Epoch seconds.
+    """
+    # Connect to the database
+    conn = sqlite3.connect(DB_PATH)
+    conn_cursor = conn.cursor()
+
+    # db request
+    conn_cursor.execute("SELECT * FROM Guilds WHERE guild_id=" + str(guild_id) )
+    db_output = conn_cursor.fetchall()
+
+    # Close the database connection
+    conn.close()
+
+    # Check if user is found
+    if len(db_output)==1:
+
+        # Returns that user
+        return db_output[0]
+
+    # If user is not found, return None
+    return None
+
+def db_get_best_users():
+    """
+    This function returns a list of the 10 users that used the bot. Example:
+
+    `([658587878484, 29], [467846787864784, 27], ...)`
+    """
+    # Database settings
+    conn = sqlite3.connect(DB_PATH)
+    conn_cursor = conn.cursor()
+
+    # Get current commands
+    conn_cursor.execute("SELECT user_id, sounds_played FROM Users ORDER BY sounds_played DESC LIMIT 10")
+    response = conn_cursor.fetchall()
+
+    # Close the connection
+    conn.close()
+
+    return response
+
+def db_get_best_guilds():
+    """
+    This function returns a list of the 10 guilds that used the bot. Example:
+
+    `([658587878484, 29], [467846787864784, 27], ...)`
+    """
+    # Database settings
+    conn = sqlite3.connect(DB_PATH)
+    conn_cursor = conn.cursor()
+
+    # Get current commands
+    conn_cursor.execute("SELECT guild_id, sounds_played FROM Guilds ORDER BY sounds_played DESC LIMIT 10")
+    response = conn_cursor.fetchall()
+
+    # Close the connection
+    conn.close()
+
+    return response
+
 def db_get_most_times_played():
     """
     This function returns a list of the 10 most played sounds. Example:
@@ -155,7 +229,7 @@ def db_get_most_times_played():
 
     return response
 
-def db_sound_played(params, user_id=None):
+def db_sound_played(params, user_id=None, guild_id=None):
     """
     This function is called after every sound is played. It adds on the database the time it has been played and updates the count.
 
@@ -194,6 +268,25 @@ def db_sound_played(params, user_id=None):
             print("User", user_id, "not found in the database. Adding it.")
             # Creates new user with one sound played
             conn_cursor.execute("INSERT INTO Users(user_id, sounds_played, added_at, last_played) VALUES(" + str(user_id) + ", 1, " + str(int(time.time())) + ", " + str(int(time.time())) + ")")
+
+    if guild_id != None:
+        # Get current guild
+        conn_cursor.execute("SELECT sounds_played FROM Guilds WHERE guild_id=" + str(guild_id) )
+        db_output = conn_cursor.fetchall()
+
+        # Check if guild exists
+        if len(db_output)==1:
+
+            # Adds one to the sound player
+            times_guild = int(conn_cursor.fetchall()[0][0]) + 1
+
+            # Update current guild
+            conn_cursor.execute("UPDATE Guilds SET sounds_played=" + str(times_played) + ", last_played=" + str(int(time.time())) + " WHERE guild_id=" + str(guild_id))
+
+        else:
+            print("Guild", guild_id, "not found in the database. Adding it.")
+            # Creates new guild with one sound played
+            conn_cursor.execute("INSERT INTO Guilds(guild_id, sounds_played, added_at, last_played) VALUES(" + str(guild_id) + ", 1, " + str(int(time.time())) + ", " + str(int(time.time())) + ")")
 
     # Commit changes
     conn.commit()
@@ -268,8 +361,8 @@ class TripleBot(discord.Client):
         """
         # First, we whitelist the admin xD
         # If this is commented, it's because I am debugging timeouts.
-        # if user_id == str(ADMIN_ID):
-        #     return True
+        if user_id == str(ADMIN_ID):
+            return True
 
         # Gets the time of the request in seconds
         current_time = int(time.time())
@@ -405,7 +498,7 @@ class TripleBot(discord.Client):
                 await self.play_code(params[0], vc, params[1])
 
             # Adding to database for stats.
-            db_sound_played(params, user_id)
+            db_sound_played(params, user_id, guild_id)
 
             # Disconnecting of vc and removing guild id from the list.
             await vc.disconnect()
@@ -489,6 +582,15 @@ class TripleBot(discord.Client):
             await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 sounds.*\n' + ''.join(['\n**{0}**: has been played {1} times.'.format(command.upper(), times) for command, times in db_response]), 15)
             return
 
+        if content == "triple ranks users":
+
+            # Checking database
+            db_response = db_get_best_users()
+
+            # Sending response
+            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 users.*\n' + ''.join(['\n**{0}**: has played {1} sounds.'.format(self.get_user(command).mention, times) for command, times in db_response]), 15)
+            return
+
         # Triple stop (admin only). Stops the bot
         if content == 'triple stop' and auth_id == ADMIN_ID:
 
@@ -507,6 +609,32 @@ class TripleBot(discord.Client):
 
             # Shows response
             await self.send_to_ch(channel, "**GUILDS WHERE I AM:**" + ''.join(['\n{0} - *Id: {1}*'.format(cguild.name, cguild.id) for cguild in self.guilds] ), 15)
+            return
+
+        # Triple guilds (admin only): shows all guilds the bot is in.
+        if content == "triple guilds this" and auth_id == ADMIN_ID:
+
+            # Check database
+            db_response = db_get_user_stats(guild_id)
+
+            if db_response != None:
+                # User found in database
+                await self.send_to_ch(channel, "**STATS FOR {0}**\n\nThis user has played {1} sounds.\nUser in database since {2}.\nLast sound played at {3}.".format(self.get_guild(guild_id).name, db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3]))), 15)
+
+            else:
+                # User not found in database
+                await self.send_to_ch(channel, "User {0} not found in our database.\nThis means that this user hasn't played any sound with TripleBot.".format(self.get_guild(guild_id).name), 5)
+
+            return
+
+        # Triple guilds (admin only): shows all guilds the bot is in.
+        if content == "triple guilds ranks" and auth_id == ADMIN_ID:
+
+            # Checking database
+            db_response = db_get_best_guilds()
+
+            # Sending response
+            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 guilds.*\n' + ''.join(['\n**{0}**: has played {1} sounds.'.format(self.get_guild(command).name, times) for command, times in db_response]), 15)
             return
 
         # Triple stats [command]: shows all information of a sound
