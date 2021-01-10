@@ -267,7 +267,7 @@ def db_sound_played(params, user_id=None, user_name=None, guild_id=None):
         else:
             print("User", user_id, "not found in the database. Adding it.")
             # Creates new user with one sound played
-            conn_cursor.execute("INSERT INTO Users(user_id, name, sounds_played, added_at, last_played) VALUES(" + str(user_id) + ", " + user_name + ", 1, " + str(int(time.time())) + ", " + str(int(time.time())) + ")")
+            conn_cursor.execute("INSERT INTO Users(user_id, name, sounds_played, added_at, last_played) VALUES(" + str(user_id) + ", '" + user_name + "', 1, " + str(int(time.time())) + ", " + str(int(time.time())) + ")")
 
     if guild_id != None:
         # Get current guild
