@@ -418,12 +418,8 @@ class TripleBot(discord.Client):
         
         If `delete != None`, it deletes the message after `delete [int]` seconds.
         """
-        # Sends msg
-        msg = await channel.send(text)
-
-        # Deletes msg
-        if delete != None:
-            await msg.delete(delay=delete)
+        # Sends msg, and deletes it if needed
+        await channel.send(text, delete_after=delete)
 
     async def play_sound(self, audio_path, voice_channel, guild_id=None):
         """
