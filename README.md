@@ -65,7 +65,7 @@ sudo nano /etc/rc.local
 ```
 And add a line just before the `exit 0`:
 ```
-sudo screen -dmS triplebot -X stuff "python3 /path/to/your/TripleBot/triplebot.py"
+sudo screen -dmS triplebot && sudo screen -S triplebot -X stuff "python3 /path/to/your/TripleBot/triplebot.py\n"
 ```
 
 Now, everytime you reboot your system, the bot will launch itself.

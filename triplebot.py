@@ -163,7 +163,7 @@ def update_help_menu():
 
 def fetch_repo(download=True):
     """
-    This function is called on `!triple fetch` and `!triple fetch reboot`.
+    This function is called on `!triple fetch` and `!triple fetch restart`.
     It downloads repository updates, and updates the command list, the help menu and the database.
     """
     # Get new files from GitHub if download is True
@@ -389,23 +389,23 @@ class TripleBot(discord.Client):
             await self.send_to_ch(channel, HELP_TEXT, None if 'keep' in content else 25)
             return
 
-        # Single commands: !triple fetch (reboot is for admin only)
-        if content in ["triple fetch", "triple fetch reboot"]:
+        # Single commands: !triple fetch (restart is for admin only)
+        if content in ["triple fetch", "triple fetch restart"]:
             # Fetch and pull from repository
             fetch_repo()
 
             # Shows a message
-            await self.send_to_ch(channel, 'Fetched!' + ('\nRebooting...' if 'reboot' in content else ''), 5)
+            await self.send_to_ch(channel, 'Fetched!' + ('\nRestarting...' if 'restart' in content else ''), 5)
 
-            # Reboot if in linux and if requester is admin.
-            if 'reboot' in content:
+            # Restart if in linux and if requester is admin.
+            if 'restart' in content:
                 if auth_id==ADMIN_ID and THISOS=="Linux":
 
                     await self.close() # Close the Discord connection
-                    terminal('sudo screen -S triplebot -X quit && sudo screen -dmS triplebot -X stuff "sudo python3 ' + PYPATH + 'triplebot.py fast"')
+                    terminal('sudo screen -S triplebot -X quit && sudo screen -dmS triplebot && sudo screen -S triplebot -X stuff "sudo python3 ' + PYPATH + 'triplebot.py fast"\n')
 
                 else:
-                    await self.send_to_ch(channel, 'Can\'t reboot!\nNo permmissions or bad OS.', 5)
+                    await self.send_to_ch(channel, 'Can\'t restart!\nNo permmissions or bad OS.', 5)
             return
 
         # Triple ranks: shows top 10 audios
