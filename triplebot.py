@@ -239,7 +239,7 @@ class TripleBot(discord.Client):
                 counters[0] += 1
 
         # Then we check if the user is in the range
-        if max([limits[i]-counters[i] for i in range(len(counters))]) < 0:
+        if max([counters[i]-limits[i] for i in range(len(counters))]) < 0:
             # Update dict and return True
             new_timings.append(current_time)
             self.user_cmds[user_id] = new_timings
