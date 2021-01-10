@@ -764,6 +764,8 @@ class TripleBot(discord.Client):
                 await self.send_to_ch(channel, 'I don\'t have anything to repeat!', 5)
             return
 
+        await self.send_to_ch(channel, 'Command not found, try another.', 5)
+
 
 # Main program
 if __name__ == "__main__":
