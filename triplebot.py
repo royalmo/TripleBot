@@ -721,6 +721,7 @@ class TripleBot(discord.Client):
         # So we need to check if the user
         # First we will return all commands that don't make sounds
         if not( "cod" in content or content in COMMAND_LIST):
+            await self.send_to_ch(channel, 'Command not found, try another.', 5)
             return
 
         # Then we can check if the user can play a sound.
