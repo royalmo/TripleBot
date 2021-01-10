@@ -350,6 +350,7 @@ class TripleBot(discord.Client):
         await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="impostors"))
 
         self.playing_on = []
+        self.shutup_at = []
         self.last_code = {}
         self.user_cmds = {}
 
@@ -425,7 +426,7 @@ class TripleBot(discord.Client):
         if delete != None:
             await msg.delete(delay=delete)
 
-    async def play_sound(self, audio_path, voice_channel):
+    async def play_sound(self, audio_path, voice_channel, guild_id=None):
         """
         This function will play a sound on a voice channel, and will wait for it to stop.
 
@@ -444,9 +445,16 @@ class TripleBot(discord.Client):
 
         # We wait until we are done.
         while voice_channel.is_playing():
-            await asyncio.sleep(.1)
+            if guild_id in self.shutup_at:
+                voice_channel.stop()
+                self.shutup_at.remove(guild_id)
+                return True
+            else:
+                await asyncio.sleep(.1)
 
-    async def play_code(self, code, voice_channel, times=1):
+        return False
+
+    async def play_code(self, code, voice_channel, times=1, guild_id=None):
         """
         This function will play a sound on a voice channel, and will wait for it to stop.
 
@@ -471,8 +479,11 @@ class TripleBot(discord.Client):
                     if letter == 'w':
                         audiopath = PYPATH + 'alphabet/' + letter + choice(['1', '2']) + '.mp3'
 
-                    # Play the audio file
-                    await self.play_sound(audiopath, voice_channel)
+                    # Play the audio file, and get the return.
+                    # If return is true, it means that shutup has been activated.
+                    # If not, the bot can continue playing.
+                    if await self.play_sound(audiopath, voice_channel,guild_id):
+                        return
 
             if times > 0: #Play 'permitame repetir'
                 await self.play_sound(MP3_PERMITAME_PATH, voice_channel)
@@ -504,13 +515,13 @@ class TripleBot(discord.Client):
             if is_sound:
                 # Getting file path and playing.
                 audiopath = PYPATH + 'sounds/' + params + '_sound.mp3'
-                await self.play_sound(audiopath, vc)
+                await self.play_sound(audiopath, vc, guild_id)
 
             else:
                 # If params is none, it means that cmd is !repetir
                 if params[0]==None:
                     params[0] = self.last_code[str(guild_id)]
-                await self.play_code(params[0], vc, params[1])
+                await self.play_code(params[0], vc, params[1], guild_id)
 
             # Adding to database for stats.
             db_sound_played(params, user_id, guild_id)
@@ -621,9 +632,9 @@ class TripleBot(discord.Client):
 
         # Triple calla. Stops any sound and leaves voice_channels
         if content == 'triple calla':
-            await self.send_to_ch(channel, "This isn't ready yet!", 5)
+            self.shutup_at.append(guild_id)
+            await self.send_to_ch(channel, "Nooo please! Why have you done that, {0}?".format(self.get_user(auth_id).mention), 5)
             return
-            # TODO
 
         # Triple guilds (admin only): shows all guilds the bot is in.
         if content == "triple guilds" and auth_id == ADMIN_ID:
@@ -640,11 +651,11 @@ class TripleBot(discord.Client):
             print("DB response:", db_response)
 
             if db_response != None:
-                # User found in database
-                await self.send_to_ch(channel, "**STATS FOR {0}**\n\nThis user has played {1} sounds.\nUser in database since {2}.\nLast sound played at {3}.".format(self.get_guild(guild_id).name, db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3]))), 15)
+                # Guild found in database
+                await self.send_to_ch(channel, "**STATS FOR {0}**\n\nThis guild has played {1} sounds.\nGuild in database since {2}.\nLast sound played at {3}.".format(self.get_guild(guild_id).name, db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3]))), 15)
 
             else:
-                # User not found in database
+                # Guild not found in database
                 await self.send_to_ch(channel, "Guild {0} not found in our database.\nThis means that this guild hasn't played any sound with TripleBot.".format(self.get_guild(guild_id).name), 5)
 
             return
