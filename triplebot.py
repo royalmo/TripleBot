@@ -178,6 +178,7 @@ def fetch_repo(download=True):
 ## DISCORD CLASS ##
 
 class TripleBot(discord.Client):
+
     async def on_ready(self):
         """
         This function is executed when the bot just connected to Discord.
@@ -190,6 +191,62 @@ class TripleBot(discord.Client):
 
         self.playing_on = []
         self.last_code = {}
+        self.user_cmds = {}
+
+    def user_new_sound(self, user_id):
+        """
+        Given a `user_id [int]` and using `self.user_cmds [dict]`, this function will return `True` or `False` depending on if the user can start a sound command or not.
+
+        If return is `True`, a command will be added to the user list.
+
+        Maximum number of messages in every case:
+        - 1 sound every 20 secs.
+        - 5 sounds every 10 mins (600 secs).
+        - 15 sounds every 30 mins (1800 secs).
+        """
+        # First, we whitelist the admin xD
+        # If this is commented, it's because I am debugging timeouts.
+        # if user_id == str(ADMIN_ID):
+        #     return True
+
+        # Gets the time of the request in seconds
+        current_time = int(time.time())
+
+        # Then, if we don't find the user in the dict, we add it and we return
+        if user_id not in self.user_cmds:
+            self.user_cmds[user_id] == [current_time]
+            return True
+
+        # If we find it, we get all the timings.
+        timings = self.user_cmds[user_id]
+
+        # We remove all sounds that are 1800 seconds older than current time
+        # They dont affect timeouts and will save us lots of ram.
+        counters = [0, 0, 0]
+        limits = [1, 5, 15]
+        new_timings = []
+
+        # We do this for each time
+        for stime in timings:
+            diff  = current_time-stime
+            if diff < 1800:
+                new_timings.append(stime)
+                counters[2] += 1
+            if diff < 600:
+                counters[1] += 1
+            if diff < 20:
+                counters[0] += 1
+
+        # Then we check if the user is in the range
+        if max([lim-count for count in counters for lim in limits]) < 0:
+            # Update dict and return True
+            new_timings.append(current_time)
+            self.user_cmds[user_id] = new_timings
+            return True
+
+        # Update dict and return False
+        self.user_cmds[user_id] = new_timings
+        return False
 
     async def send_to_ch(self, channel, text, delete=None):
         """
@@ -322,6 +379,9 @@ class TripleBot(discord.Client):
         # We don't remove it in code commands as we want to see them on chat.
         if content.split()[0] in COMMAND_LIST:
             await message.delete()
+            msg_got_deleted = True
+        else:
+            msg_got_deleted = False
 
         # Single commands: !triple help
         if content in ['triple help', 'triple help keep']:
@@ -386,11 +446,21 @@ class TripleBot(discord.Client):
                 await self.send_to_ch(channel, '**TripleBot Command Stats**: *{0}*\nHas been played {1} times.\nTripleBot is keeping track of this sound since *{2}*\nLast time played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3])) if int(db_response[3]) != 0 else "Hasn't been played yet."  ), 15 )
 
         # Triple stats and triple stats [user]: shows all info about that person.
-        if 'triple stats' in content:
-            await self.send_to_ch(channel, "This isn't ready yet!", 5)
-            # TODO
+        if len(content) > 12:
+            if content[:12] == 'triple stats':
+                await self.send_to_ch(channel, "This isn't ready yet!", 5)
+                # TODO
 
         # FROM NOW ON MUSIC WILL BE PLAYED
+        # So we need to check if the user
+        # First we will return all commands that don't make sounds
+        if not msg_got_deleted:
+            return
+
+        # Then we can check if the user can play a sound.
+        if not self.user_new_sound(str(auth_id)):
+            await self.send_to_ch(channel, "Slow down dude, ur on cooldown!", 5)
+            return # if not we return
 
         # Sound commands
         if content in COMMAND_LIST:
