@@ -406,6 +406,7 @@ class TripleBot(discord.Client):
 
                 else:
                     await self.send_to_ch(channel, 'Can\'t reboot!\nNo permmissions or bad OS.', 5)
+            return
 
         # Triple ranks: shows top 10 audios
         if content == "triple ranks":
@@ -415,6 +416,7 @@ class TripleBot(discord.Client):
 
             # Sending response
             await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 sounds.*\n' + ''.join(['\n**{0}**: has been played {1} times.'.format(command.upper(), times) for command, times in db_response]), 15)
+            return
 
         # Triple stop (admin only). Stops the bot
         if content == 'triple stop' and auth_id == ADMIN_ID:
@@ -426,6 +428,7 @@ class TripleBot(discord.Client):
         # Triple calla. Stops any sound and leaves voice_channels
         if content == 'triple calla':
             await self.send_to_ch(channel, "This isn't ready yet!", 5)
+            return
             # TODO
 
         # Triple guilds (admin only): shows all guilds the bot is in.
@@ -445,10 +448,13 @@ class TripleBot(discord.Client):
                 # Sends response
                 await self.send_to_ch(channel, '**TripleBot Command Stats**: *{0}*\nHas been played {1} times.\nTripleBot is keeping track of this sound since *{2}*\nLast time played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3])) if int(db_response[3]) != 0 else "Hasn't been played yet."  ), 15 )
 
+                return
+
         # Triple stats and triple stats [user]: shows all info about that person.
         if len(content) > 12:
             if content[:12] == 'triple stats':
                 await self.send_to_ch(channel, "This isn't ready yet!", 5)
+                return
                 # TODO
 
         # FROM NOW ON MUSIC WILL BE PLAYED
