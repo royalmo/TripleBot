@@ -11,7 +11,6 @@ import asyncio
 import sqlite3
 import time
 from pathlib import Path
-from time import sleep
 from random import choice
 from string import ascii_lowercase
 from platform import system as operative_system
@@ -420,7 +419,7 @@ class TripleBot(discord.Client):
         If `delete != None`, it deletes the message after `delete [int]` seconds.
         """
         # Sends msg
-        msg = await channel.send(text)
+        msg = await channel.send(text, embed=None)
 
         # Deletes msg
         if delete != None:
@@ -791,7 +790,7 @@ if __name__ == "__main__":
     if THISOS == "Linux":
         if "fast" not in argv:
             print("Sleeping 30 secs. If you type 'fast' after the .py, this step will be skipped.")
-            sleep(30)
+            time.sleep(30)
 
     # Starting the bot
     mainbot = TripleBot(DISCORD_TOKEN)
