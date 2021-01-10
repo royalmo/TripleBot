@@ -54,18 +54,13 @@ python triplebot.py
 ```
 If you type `python triplebot.py fast` instead (and you are on Linux, on Windows it's done automaticly), you will skip a useless timeout i placed.
 
-To be able to run `!triple fetch restart`, you will need to be on Linux, and then you will need to have screen installed.
-```
-sudo apt-get install screen
-```
-
 You may also want the python file to always run when the PC is started. If you are on linux, you can do the following:
 ```
 sudo nano /etc/rc.local
 ```
 And add a line just before the `exit 0`:
 ```
-sudo screen -dmS triplebot && sudo screen -S triplebot -X stuff "python3 /path/to/your/TripleBot/triplebot.py\n"
+sudo python3 /path/to/your/TripleBot/triplebot.py &
 ```
 
 Now, everytime you reboot your system, the bot will launch itself.

@@ -15,8 +15,8 @@ from time import sleep
 from random import choice
 from string import ascii_lowercase
 from platform import system as operative_system
-from os import system as terminal
-from sys import argv
+from os import execv, system as terminal
+from sys import argv, executable
 
 # Defining some constants
 PYPATH = str(Path(__file__).parent.absolute()) + "/"
@@ -397,15 +397,16 @@ class TripleBot(discord.Client):
             # Shows a message
             await self.send_to_ch(channel, 'Fetched!' + ('\nRestarting...' if 'restart' in content else ''), 5)
 
-            # Restart if in linux and if requester is admin.
+            # Restart if requester is admin.
             if 'restart' in content:
-                if auth_id==ADMIN_ID and THISOS=="Linux":
+                if auth_id==ADMIN_ID:
 
                     await self.close() # Close the Discord connection
-                    terminal('sudo screen -S triplebot -X quit && sudo screen -dmS triplebot && sudo screen -S triplebot -X stuff "sudo python3 ' + PYPATH + 'triplebot.py fast"\n')
+                    # Restarts the python application
+                    execv(executable, [executable, __file__] + [argv[0], 'fast'])
 
                 else:
-                    await self.send_to_ch(channel, 'Can\'t restart!\nNo permmissions or bad OS.', 5)
+                    await self.send_to_ch(channel, 'Can\'t restart!\nNo permmissions.', 5)
             return
 
         # Triple ranks: shows top 10 audios
