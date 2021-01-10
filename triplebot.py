@@ -57,7 +57,7 @@ def update_db_cmds():
     # Creates table if Users doesn't exist
     if 'Users' not in tables:
         print("Table Users not found, creating one.")
-        conn_cursor.execute("CREATE TABLE Users(user_id integer PRIMARY KEY,  sounds_played integer, added_at integer, last_played integer)")
+        conn_cursor.execute("CREATE TABLE Users(user_id integer PRIMARY KEY, name text, sounds_played integer, added_at integer, last_played integer)")
 
     # Creates table if Guilds doesn't exist
     if 'Guilds' not in tables:
@@ -126,7 +126,7 @@ def db_get_user_stats(user_id):
     conn_cursor = conn.cursor()
 
     # db request
-    conn_cursor.execute("SELECT * FROM Users WHERE user_id=" + str(user_id) )
+    conn_cursor.execute("SELECT user_id, sounds_played, added_at, last_played FROM Users WHERE user_id=" + str(user_id) )
     db_output = conn_cursor.fetchall()
 
     # Close the database connection
@@ -176,14 +176,14 @@ def db_get_best_users():
     """
     This function returns a list of the 10 users that used the bot. Example:
 
-    `([658587878484, 29], [467846787864784, 27], ...)`
+    `(['royalmo', 29], ['Syndria', 27], ...)`
     """
     # Database settings
     conn = sqlite3.connect(DB_PATH)
     conn_cursor = conn.cursor()
 
     # Get current commands
-    conn_cursor.execute("SELECT user_id, sounds_played FROM Users ORDER BY sounds_played DESC LIMIT 10")
+    conn_cursor.execute("SELECT name, sounds_played FROM Users ORDER BY sounds_played DESC LIMIT 10")
     response = conn_cursor.fetchall()
 
     # Close the connection
@@ -229,7 +229,7 @@ def db_get_most_times_played():
 
     return response
 
-def db_sound_played(params, user_id=None, guild_id=None):
+def db_sound_played(params, user_id=None, user_name=None, guild_id=None):
     """
     This function is called after every sound is played. It adds on the database the time it has been played and updates the count.
 
@@ -250,7 +250,7 @@ def db_sound_played(params, user_id=None, guild_id=None):
     # Update the command
     conn_cursor.execute("UPDATE Sounds SET times_played=" + str(times_played) + ", last_played=" + str(int(time.time())) + " WHERE name='" + params + "'")
 
-    if user_id != None:
+    if user_id != None and user_name != None:
         # Get current user
         conn_cursor.execute("SELECT sounds_played FROM Users WHERE user_id=" + str(user_id) )
         db_output = conn_cursor.fetchall()
@@ -267,7 +267,7 @@ def db_sound_played(params, user_id=None, guild_id=None):
         else:
             print("User", user_id, "not found in the database. Adding it.")
             # Creates new user with one sound played
-            conn_cursor.execute("INSERT INTO Users(user_id, sounds_played, added_at, last_played) VALUES(" + str(user_id) + ", 1, " + str(int(time.time())) + ", " + str(int(time.time())) + ")")
+            conn_cursor.execute("INSERT INTO Users(user_id, name, sounds_played, added_at, last_played) VALUES(" + str(user_id) + ", " + user_name + ", 1, " + str(int(time.time())) + ", " + str(int(time.time())) + ")")
 
     if guild_id != None:
         # Get current guild
@@ -524,7 +524,10 @@ class TripleBot(discord.Client):
                 await self.play_code(params[0], vc, params[1], guild_id)
 
             # Adding to database for stats.
-            db_sound_played(params, user_id, guild_id)
+            username = self.get_user(user_id)
+            if username != None:
+                username = username.name
+            db_sound_played(params, user_id, username, guild_id)
 
             # Disconnecting of vc and removing guild id from the list.
             await vc.disconnect()
@@ -620,7 +623,7 @@ class TripleBot(discord.Client):
             print("DB response:", db_response)
 
             # Sending response
-            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 users.*\n' + ''.join(['\n**{0}**: has played {1} sounds.'.format(self.get_user(user_id).mention if self.get_user(user_id)!=None else "-User not in this server-", times) for user_id, times in db_response]), 15)
+            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 users.*\n' + ''.join(['\n**{0}**: has played {1} sounds.'.format( user_name, times) for user_name, times in db_response]), 15)
             return
 
         # Triple stop (admin only). Stops the bot
@@ -714,7 +717,7 @@ class TripleBot(discord.Client):
         # FROM NOW ON MUSIC WILL BE PLAYED
         # So we need to check if the user
         # First we will return all commands that don't make sounds
-        if not( "cod" in content or msg_got_deleted):
+        if not( "cod" in content or content in COMMAND_LIST):
             return
 
         # Then we can check if the user can play a sound.
