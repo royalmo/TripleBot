@@ -17,4 +17,6 @@
 *Current soundbox commands:*
 {0}
 
+Max. sounds before timeout: 1 sound every 20 secs, 5 sounds every 10 mins or 15 sounds every 30 mins.
+
 *Made by royalmo:* https://github.com/royalmo/TripleBot
