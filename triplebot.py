@@ -178,7 +178,7 @@ def db_sound_played(params, user_id=None):
 
     if user_id != None:
         # Get current user
-        conn_cursor.execute("SELECT songs_played FROM Users WHERE user_id=" + str(user_id) )
+        conn_cursor.execute("SELECT sounds_played FROM Users WHERE user_id=" + str(user_id) )
         db_output = conn_cursor.fetchall()
 
         # Check if user exists
@@ -522,7 +522,7 @@ class TripleBot(discord.Client):
                 return
 
         # Triple stats and triple stats [user]: shows all info about that person.
-        if len(content) > 12:
+        if len(content) >= 12:
             if content[:12] == 'triple stats':
                 
                 # Depending of a !triple stats or !triple stats @someone,
