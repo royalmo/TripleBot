@@ -51,9 +51,13 @@ def update_db_cmds():
 
     # Creates table if Sounds doesn't exist
     if 'Sounds' not in tables:
-        print("Table not found, creating one.")
+        print("Table Sounds not found, creating one.")
         conn_cursor.execute("CREATE TABLE Sounds(id integer PRIMARY KEY, name text, times_played integer, added_at integer, last_played integer)")
-        conn.commit()
+
+    # Creates table if Users doesn't exist
+    if 'Users' not in tables:
+        print("Table Users not found, creating one.")
+        conn_cursor.execute("CREATE TABLE Users(user_id integer PRIMARY KEY,  sounds_played integer, added_at integer, last_played integer)")
 
     # Get current commands
     conn_cursor.execute("SELECT name from Sounds")
@@ -61,20 +65,20 @@ def update_db_cmds():
 
     # Add new commands if found
     seconds = time.time()
-    for command in COMMAND_LIST:
+    for command in COMMAND_LIST + ['code']:
         if command not in sql_commands:
             print("Adding command: " + command)
             conn_cursor.execute("INSERT INTO Sounds(name, times_played, added_at, last_played) VALUES('" + command + "', 0, " + str(int(seconds)) + ", 0)")
-            conn.commit()
-
+    
+    conn.commit()
     conn.close()
 
-def db_get_single_info(commandname):
+def db_get_song_stats(commandname):
     """
     Returns all database information (except ID) of a specific command.
     If the command is not found, nothing is returned, so it may cause an IndexError somewhere else.
 
-    Ironic example of `db_get_single_info('triple')`
+    Ironic example of `db_get_song_stats('triple')`
 
     `['triple', 10, 94385734, 18907465]`
 
@@ -101,6 +105,37 @@ def db_get_single_info(commandname):
 
     return response
 
+def db_get_user_stats(user_id):
+    """
+    Returns all database information of a specific user.
+    If the command is not found, `None` is returned, so it may cause an IndexError somewhere else.
+
+    Ironic example of `db_get_user_stats(23592385987235239)`
+
+    `[23592385987235239, 10, 94385734, 18907465]`
+
+    Remember that timestamps are on Epoch seconds.
+    """
+    # Connect to the database
+    conn = sqlite3.connect(DB_PATH)
+    conn_cursor = conn.cursor()
+
+    # db request
+    conn_cursor.execute("SELECT * FROM Users WHERE user_id=" + str(user_id) )
+    db_output = conn_cursor.fetchall()
+
+    # Close the database connection
+    conn.close()
+
+    # Check if user is found
+    if len(db_output)==1:
+
+        # Returns that user
+        return db_output[0]
+
+    # If user is not found, return None
+    return None
+
 def db_get_most_times_played():
     """
     This function returns a list of the 10 most played sounds. Example:
@@ -120,7 +155,7 @@ def db_get_most_times_played():
 
     return response
 
-def db_sound_played(commandname):
+def db_sound_played(params, user_id=None):
     """
     This function is called after every sound is played. It adds on the database the time it has been played and updates the count.
 
@@ -130,11 +165,37 @@ def db_sound_played(commandname):
     conn = sqlite3.connect(DB_PATH)
     conn_cursor = conn.cursor()
 
+    # If command was a code, we change it
+    if type(params) != type(''):
+        params = 'code'
+
     # Get current commands
-    conn_cursor.execute("SELECT times_played FROM Sounds WHERE name='" + commandname + "'")
+    conn_cursor.execute("SELECT times_played FROM Sounds WHERE name='" + params + "'")
     times_played = int(conn_cursor.fetchall()[0][0]) + 1
 
-    conn_cursor.execute("UPDATE Sounds SET times_played=" + str(times_played) + ", last_played=" + str(int(time.time())) + " WHERE name='" + commandname + "'")
+    # Update the command
+    conn_cursor.execute("UPDATE Sounds SET times_played=" + str(times_played) + ", last_played=" + str(int(time.time())) + " WHERE name='" + params + "'")
+
+    if user_id != None:
+        # Get current user
+        conn_cursor.execute("SELECT songs_played FROM Users WHERE user_id=" + str(user_id) )
+        db_output = conn_cursor.fetchall()
+
+        # Check if user exists
+        if len(db_output)==1:
+
+            # Adds one to the sound player
+            times_user = int(conn_cursor.fetchall()[0][0]) + 1
+
+            # Update current user
+            conn_cursor.execute("UPDATE Users SET sounds_played=" + str(times_played) + ", last_played=" + str(int(time.time())) + " WHERE user_id=" + str(user_id))
+
+        else:
+            print("User", user_id, "not found in the database. Adding it.")
+            # Creates new user with one sound played
+            conn_cursor.execute("INSERT INTO Users(user_id, sounds_played, added_at, last_played) VALUES(" + str(user_id) + ", 1, " + str(int(time.time())) + ", " + str(int(time.time())) + ")")
+
+    # Commit changes
     conn.commit()
 
     # Close the connection
@@ -309,7 +370,7 @@ class TripleBot(discord.Client):
             if times > 0: #Play 'permitame repetir'
                 await self.play_sound(MP3_PERMITAME_PATH, voice_channel)
 
-    async def join_n_leave(self, guild_id, auth_vc, channel, is_sound, params):
+    async def join_n_leave(self, guild_id, user_id, auth_vc, channel, is_sound, params):
         """
         This function manages all the audio stuff, it has been made so there isn't that many stuff going on and to prevent spaguetti code.
 
@@ -336,13 +397,15 @@ class TripleBot(discord.Client):
                 # Getting file path and playing.
                 audiopath = PYPATH + 'sounds/' + params + '_sound.mp3'
                 await self.play_sound(audiopath, vc)
-                # Adding to database for stats.
-                db_sound_played(params)
+
             else:
                 # If params is none, it means that cmd is !repetir
                 if params[0]==None:
                     params[0] = self.last_code[str(guild_id)]
                 await self.play_code(params[0], vc, params[1])
+
+            # Adding to database for stats.
+            db_sound_played(params, user_id)
 
             # Disconnecting of vc and removing guild id from the list.
             await vc.disconnect()
@@ -375,6 +438,7 @@ class TripleBot(discord.Client):
         auth_id = message.author.id
         auth_vc = message.author.voice
         guild_id = message.guild.id
+        mentions = message.mentions
 
         # Now that we have all the things, we can remove the message:
         # We don't remove it in code commands as we want to see them on chat.
@@ -389,6 +453,7 @@ class TripleBot(discord.Client):
             await self.send_to_ch(channel, HELP_TEXT, None if 'keep' in content else 25)
             return
 
+        # Reloads commands, databases and the help menu
         if content == "triple reload":
             fetch_repo(download=False)
             await self.send_to_ch(channel, 'Reloaded successfully!', 5)
@@ -449,7 +514,7 @@ class TripleBot(discord.Client):
             if content[:13] == 'triple stats ' and content[13:] in COMMAND_LIST:
 
                 # Checks database
-                db_response = db_get_single_info(content.split()[2])
+                db_response = db_get_song_stats(content.split()[2])
 
                 # Sends response
                 await self.send_to_ch(channel, '**TripleBot Command Stats**: *{0}*\nHas been played {1} times.\nTripleBot is keeping track of this sound since *{2}*\nLast time played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3])) if int(db_response[3]) != 0 else "Hasn't been played yet."  ), 15 )
@@ -459,9 +524,28 @@ class TripleBot(discord.Client):
         # Triple stats and triple stats [user]: shows all info about that person.
         if len(content) > 12:
             if content[:12] == 'triple stats':
-                await self.send_to_ch(channel, "This isn't ready yet!", 5)
+                
+                # Depending of a !triple stats or !triple stats @someone,
+                # We have to get the mention and the id differently.
+                if len(mentions) != 0:
+                    stats_id = mentions[0].id
+                    mentionstr = mentions[0].mention
+                else:
+                    stats_id = auth_id
+                    mentionstr = self.get_user(auth_id).mention
+
+                # Check database
+                db_response = db_get_user_stats(stats_id)
+
+                if db_response != None:
+                    # User found in database
+                    await self.send_to_ch(channel, "**STATS FOR {0}**\n\nThis user has played {1} sounds.\nUser in database since {2}.\nLast sound played at {3}.".format(mentionstr, db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3]))), 15)
+
+                else:
+                    # User not found in database
+                    await self.send_to_ch(channel, "User {0} not found in our database.\nThis means that this user hasn't played any sound with TripleBot.".format(mentionstr), 5)
+
                 return
-                # TODO
 
         # FROM NOW ON MUSIC WILL BE PLAYED
         # So we need to check if the user
@@ -476,7 +560,7 @@ class TripleBot(discord.Client):
 
         # Sound commands
         if content in COMMAND_LIST:
-            await self.join_n_leave(guild_id, auth_vc, channel, is_sound=True, params=content)
+            await self.join_n_leave(guild_id, auth_id, auth_vc, channel, is_sound=True, params=content)
             return
 
         # Code commands
@@ -498,13 +582,13 @@ class TripleBot(discord.Client):
                     times = 1
 
                 # Saying code
-                await self.join_n_leave(guild_id, auth_vc, channel, is_sound=False, params=[splitted[1], times])
+                await self.join_n_leave(guild_id, auth_id, auth_vc, channel, is_sound=False, params=[splitted[1], times])
                 return
 
         # !repetir last code.
         if content == "repetir":
             if str(guild_id) in self.last_code:
-                await self.join_n_leave(guild_id, auth_vc, channel, is_sound=False, params=[None, 1])
+                await self.join_n_leave(guild_id, auth_id, auth_vc, channel, is_sound=False, params=[None, 1])
 
             else:
                 await self.send_to_ch(channel, 'I don\'t have anything to repeat!', 5)
