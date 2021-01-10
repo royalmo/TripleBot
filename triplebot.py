@@ -259,10 +259,10 @@ def db_sound_played(params, user_id=None, guild_id=None):
         if len(db_output)==1:
 
             # Adds one to the sound player
-            times_user = int(conn_cursor.fetchall()[0][0]) + 1
+            times_user = int(db_output[0][0]) + 1
 
             # Update current user
-            conn_cursor.execute("UPDATE Users SET sounds_played=" + str(times_played) + ", last_played=" + str(int(time.time())) + " WHERE user_id=" + str(user_id))
+            conn_cursor.execute("UPDATE Users SET sounds_played=" + str(times_user) + ", last_played=" + str(int(time.time())) + " WHERE user_id=" + str(user_id))
 
         else:
             print("User", user_id, "not found in the database. Adding it.")
@@ -278,10 +278,10 @@ def db_sound_played(params, user_id=None, guild_id=None):
         if len(db_output)==1:
 
             # Adds one to the sound player
-            times_guild = int(conn_cursor.fetchall()[0][0]) + 1
+            times_guild = int(db_output[0][0]) + 1
 
             # Update current guild
-            conn_cursor.execute("UPDATE Guilds SET sounds_played=" + str(times_played) + ", last_played=" + str(int(time.time())) + " WHERE guild_id=" + str(guild_id))
+            conn_cursor.execute("UPDATE Guilds SET sounds_played=" + str(times_guild) + ", last_played=" + str(int(time.time())) + " WHERE guild_id=" + str(guild_id))
 
         else:
             print("Guild", guild_id, "not found in the database. Adding it.")
@@ -329,10 +329,15 @@ def fetch_repo(download=True):
     update_help_menu()
     update_db_cmds()
 
-
 ## DISCORD CLASS ##
 
 class TripleBot(discord.Client):
+    def __init__(self, token):
+        """
+        Runs the bot with the given token.
+        """
+        super().__init__()
+        self.run(token)
 
     async def on_ready(self):
         """
@@ -369,6 +374,7 @@ class TripleBot(discord.Client):
 
         # Then, if we don't find the user in the dict, we add it and we return
         if user_id not in self.user_cmds:
+            print("User not in timeout dict. Allowed to play.")
             self.user_cmds[user_id] = [current_time]
             return True
 
@@ -391,6 +397,9 @@ class TripleBot(discord.Client):
                 counters[1] += 1
             if diff < 20:
                 counters[0] += 1
+
+        # Print for debugging
+        print("Got counters:", counters, "\nLimits are:", limits)
 
         # Then we check if the user is in the range
         if max([counters[i]-limits[i] for i in range(len(counters))]) < 0:
@@ -424,11 +433,16 @@ class TripleBot(discord.Client):
 
         `audio_path`: A string with the absolute path of the mp3 file.
         """
+        # Print something to log.
+        print(" - Playing", audio_path)
+
+        # If we are on Windows, we want to specify the path of ffmpeg.
         if THISOS=="Windows":
                     voice_channel.play(discord.FFmpegPCMAudio(executable=WINDOWS_FFMPEG_PATH, source=audio_path))
         else:
             voice_channel.play(discord.FFmpegPCMAudio(source=audio_path))
 
+        # We wait until we are done.
         while voice_channel.is_playing():
             await asyncio.sleep(.1)
 
@@ -484,6 +498,7 @@ class TripleBot(discord.Client):
             # Adding guild id into list of guilds in use and connecting to vc.
             self.playing_on.append(guild_id)
             vc = await auth_vc.channel.connect()
+            print("Joined a VC on guild id", guild_id)
             
             # Playing sound of code depending of is_sound
             if is_sound:
@@ -503,6 +518,7 @@ class TripleBot(discord.Client):
             # Disconnecting of vc and removing guild id from the list.
             await vc.disconnect()
             self.playing_on.remove(guild_id)
+            print("Left a VC on guild id", guild_id)
 
         # Sending user error messages if needed.
         elif guild_id in self.playing_on:
@@ -532,6 +548,9 @@ class TripleBot(discord.Client):
         auth_vc = message.author.voice
         guild_id = message.guild.id
         mentions = message.mentions
+
+        # Pring for degugging
+        print("Got message candidate:", content, "from user id:", auth_id)
 
         # Now that we have all the things, we can remove the message:
         # We don't remove it in code commands as we want to see them on chat.
@@ -577,6 +596,7 @@ class TripleBot(discord.Client):
 
             # Checking database
             db_response = db_get_most_times_played()
+            print("DB response:", db_response)
 
             # Sending response
             await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 sounds.*\n' + ''.join(['\n**{0}**: has been played {1} times.'.format(command.upper(), times) for command, times in db_response]), 15)
@@ -586,6 +606,7 @@ class TripleBot(discord.Client):
 
             # Checking database
             db_response = db_get_best_users()
+            print("DB response:", db_response)
 
             # Sending response
             await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 users.*\n' + ''.join(['\n**{0}**: has played {1} sounds.'.format(self.get_user(command).mention, times) for command, times in db_response]), 15)
@@ -615,7 +636,8 @@ class TripleBot(discord.Client):
         if content == "triple guilds this" and auth_id == ADMIN_ID:
 
             # Check database
-            db_response = db_get_user_stats(guild_id)
+            db_response = db_get_guild_stats(guild_id)
+            print("DB response:", db_response)
 
             if db_response != None:
                 # User found in database
@@ -623,7 +645,7 @@ class TripleBot(discord.Client):
 
             else:
                 # User not found in database
-                await self.send_to_ch(channel, "User {0} not found in our database.\nThis means that this user hasn't played any sound with TripleBot.".format(self.get_guild(guild_id).name), 5)
+                await self.send_to_ch(channel, "Guild {0} not found in our database.\nThis means that this guild hasn't played any sound with TripleBot.".format(self.get_guild(guild_id).name), 5)
 
             return
 
@@ -632,6 +654,7 @@ class TripleBot(discord.Client):
 
             # Checking database
             db_response = db_get_best_guilds()
+            print("DB response:", db_response)
 
             # Sending response
             await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 guilds.*\n' + ''.join(['\n**{0}**: has played {1} sounds.'.format(self.get_guild(command).name, times) for command, times in db_response]), 15)
@@ -643,6 +666,7 @@ class TripleBot(discord.Client):
 
                 # Checks database
                 db_response = db_get_song_stats(content.split()[2])
+                print("DB response:", db_response)
 
                 # Sends response
                 await self.send_to_ch(channel, '**TripleBot Command Stats**: *{0}*\nHas been played {1} times.\nTripleBot is keeping track of this sound since *{2}*\nLast time played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3])) if int(db_response[3]) != 0 else "Hasn't been played yet."  ), 15 )
@@ -664,6 +688,7 @@ class TripleBot(discord.Client):
 
                 # Check database
                 db_response = db_get_user_stats(stats_id)
+                print("DB response:", db_response)
 
                 if db_response != None:
                     # User found in database
@@ -749,5 +774,4 @@ if __name__ == "__main__":
             sleep(30)
 
     # Starting the bot
-    mainbot = TripleBot()
-    mainbot.run(DISCORD_TOKEN)
+    mainbot = TripleBot(DISCORD_TOKEN)
