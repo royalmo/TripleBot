@@ -561,7 +561,7 @@ class TripleBot(discord.Client):
         mentions = message.mentions
 
         # Pring for degugging
-        print("Got message candidate:", content, "from user id:", auth_id)
+        print("Got message candidate:", content, "from user id:", auth_id, "at:", time.ctime())
 
         # Now that we have all the things, we can remove the message:
         # We don't remove it in code commands as we want to see them on chat.
@@ -620,7 +620,7 @@ class TripleBot(discord.Client):
             print("DB response:", db_response)
 
             # Sending response
-            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 users.*\n' + ''.join(['\n**{0}**: has played {1} sounds.'.format(self.get_user(command).mention, times) for command, times in db_response]), 15)
+            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 users.*\n' + ''.join(['\n**{0}**: has played {1} sounds.'.format(self.get_user(user_id).mention if self.get_user(user_id)!=None else "-User not in this server-", times) for user_id, times in db_response]), 15)
             return
 
         # Triple stop (admin only). Stops the bot
@@ -714,7 +714,7 @@ class TripleBot(discord.Client):
         # FROM NOW ON MUSIC WILL BE PLAYED
         # So we need to check if the user
         # First we will return all commands that don't make sounds
-        if not msg_got_deleted:
+        if not( "cod" in content or msg_got_deleted):
             return
 
         # Then we can check if the user can play a sound.
