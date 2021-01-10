@@ -419,7 +419,7 @@ class TripleBot(discord.Client):
         If `delete != None`, it deletes the message after `delete [int]` seconds.
         """
         # Sends msg
-        msg = await channel.send(text, embed=discord.Embed.Empty)
+        msg = await channel.send(text)
 
         # Deletes msg
         if delete != None:

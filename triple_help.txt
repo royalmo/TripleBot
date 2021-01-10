@@ -23,4 +23,4 @@
 
 **Max. sounds before timeout:** 2 sounds every 30 secs, 15 sounds every 10 mins or 30 sounds every 30 mins.
 
-*Made by royalmo:* https://github.com/royalmo/TripleBot
+*Made by royalmo:* <https://github.com/royalmo/TripleBot>
