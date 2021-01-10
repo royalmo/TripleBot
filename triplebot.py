@@ -16,6 +16,7 @@ from random import choice
 from string import ascii_lowercase
 from platform import system as operative_system
 from os import system as terminal
+from sys import argv
 
 # Defining some constants
 PYPATH = str(Path(__file__).parent.absolute()) + "/"
@@ -214,7 +215,7 @@ class TripleBot(discord.Client):
 
         # Then, if we don't find the user in the dict, we add it and we return
         if user_id not in self.user_cmds:
-            self.user_cmds[user_id] == [current_time]
+            self.user_cmds[user_id] = [current_time]
             return True
 
         # If we find it, we get all the timings.
@@ -413,8 +414,7 @@ class TripleBot(discord.Client):
             db_response = db_get_most_times_played()
 
             # Sending response
-            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 sounds.*' + ''.join(['\n**{0}**: has been played {1} times.'.format(command.upper(), times) for command, times in db_response]), 15)
-
+            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 sounds.*\n' + ''.join(['\n**{0}**: has been played {1} times.'.format(command.upper(), times) for command, times in db_response]), 15)
 
         # Triple stop (admin only). Stops the bot
         if content == 'triple stop' and auth_id == ADMIN_ID:
@@ -520,7 +520,9 @@ if __name__ == "__main__":
     # Why we do this? Because when raspi boots, network becomes ready onnly some seconds after rc.local is executed, so if we don't wait the program crashes.
     # So, we only need to do this when we are on linux.
     if THISOS == "Linux":
-        sleep(30)
+        if "fast" not in argv:
+            print("Sleeping 30 secs. If you type 'fast' after the .py, this step will be skipped.")
+            sleep(30)
 
     # Starting the bot
     mainbot = TripleBot()
