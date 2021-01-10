@@ -253,25 +253,44 @@ class TripleBot(discord.Client):
 
     async def join_n_leave(self, guild_id, auth_vc, channel, is_sound, params):
         """
-        A
+        This function manages all the audio stuff, it has been made so there isn't that many stuff going on and to prevent spaguetti code.
+
+        `guild_id [int]`: The guild the bot is playing to.
+
+        `auth_vc [VoiceChannel]`: The voice channel where to play.
+
+        `channel [TextChannel]`: The text channel where to answer.
+
+        `is_sound [bool]`: Whether if it's a sound or a code. This will depend for `params`. When `is_sound` is...
+
+        - True: `params [string]`: the command to be played
+        - False: `params [ code[int], repeat[int] ]`
         """
-        # Only play music if user is in a voice channel
+        # Only play music if user is in a voice channel and bot is not already in a vc on the same guild
         if auth_vc != None and guild_id not in self.playing_on:
+
+            # Adding guild id into list of guilds in use and connecting to vc.
             self.playing_on.append(guild_id)
             vc = await auth_vc.channel.connect()
             
+            # Playing sound of code depending of is_sound
             if is_sound:
+                # Getting file path and playing.
                 audiopath = PYPATH + 'sounds/' + params + '_sound.mp3'
-                self.play_sound(audiopath, vc)
+                await self.play_sound(audiopath, vc)
+                # Adding to database for stats.
                 db_sound_played(params)
             else:
+                # If params is none, it means that cmd is !repetir
                 if params[0]==None:
                     params[0] = self.last_code[str(guild_id)]
                 await self.play_code(params[0], vc, params[1])
 
+            # Disconnecting of vc and removing guild id from the list.
             await vc.disconnect()
             self.playing_on.remove(guild_id)
 
+        # Sending user error messages if needed.
         elif guild_id in self.playing_on:
             await self.send_to_ch(channel, 'I\'m already playing a sound!', 5)
 
