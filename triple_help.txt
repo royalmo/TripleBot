@@ -1,6 +1,7 @@
 **COMMANDS:**
 `!triple rank`: Shows the top 10 sounds, like a ranking.
 `!triple calla`: Please, don't do this, be nice with me :(
+`!triple reload`: Reoads this menu and all the comands and databases.
 `!triple fetch`: Syncs the project folder with the repository.
 
 `!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan a letters-only code.

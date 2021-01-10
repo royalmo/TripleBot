@@ -389,6 +389,11 @@ class TripleBot(discord.Client):
             await self.send_to_ch(channel, HELP_TEXT, None if 'keep' in content else 25)
             return
 
+        if content == "triple reload":
+            fetch_repo(download=False)
+            await self.send_to_ch(channel, 'Reloaded successfully!', 5)
+            return
+
         # Single commands: !triple fetch (restart is for admin only)
         if content in ["triple fetch", "triple fetch restart"]:
             # Fetch and pull from repository
