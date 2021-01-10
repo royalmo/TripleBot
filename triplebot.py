@@ -251,6 +251,34 @@ class TripleBot(discord.Client):
             if times > 0: #Play 'permitame repetir'
                 await self.play_sound(MP3_PERMITAME_PATH, voice_channel)
 
+    async def join_n_leave(self, guild_id, auth_vc, channel, is_sound, params):
+        """
+        A
+        """
+        # Only play music if user is in a voice channel
+        if auth_vc != None and guild_id not in self.playing_on:
+            self.playing_on.append(guild_id)
+            vc = await auth_vc.channel.connect()
+            
+            if is_sound:
+                audiopath = PYPATH + 'sounds/' + params + '_sound.mp3'
+                self.play_sound(audiopath, vc)
+                db_sound_played(params)
+            else:
+                if params[0]==None:
+                    params[0] = self.last_code[str(guild_id)]
+                await self.play_code(params[0], vc, params[1])
+
+            await vc.disconnect()
+            self.playing_on.remove(guild_id)
+
+        elif guild_id in self.playing_on:
+            await self.send_to_ch(channel, 'I\'m already playing a sound!', 5)
+
+        else:
+            await self.send_to_ch(channel, 'User is not in a channel.', 5)
+
+
     async def on_message(self, message):
         """
         This function is executed everytime a message is received from anyone and from any channel.
@@ -347,122 +375,40 @@ class TripleBot(discord.Client):
 
         # Sound commands
         if content in COMMAND_LIST:
-
-            # Only play music if user is in a voice channel
-            if auth_vc != None and guild_id not in self.playing_on:
-
-                # Set playing status
-                self.playing_on.append(guild_id)
-                vc = await auth_vc.channel.connect()
-
-                audiopath = PYPATH + 'sounds/' + content + '_sound.mp3'
-
-                await self.play_sound(audiopath, vc)
-                db_sound_played(content)
-
-                # Disconnect after the player has finished
-                await vc.disconnect()
-                self.playing_on.remove(guild_id)
-
-            elif guild_id in self.playing_on:
-                await self.send_to_ch(channel, 'I\'m already playing a sound!', 5)
-
-            else:
-                await self.send_to_ch(channel, 'User is not in a channel.', 5)
-
+            await self.join_n_leave(guild_id, auth_vc, channel, is_sound=True, params=content)
             return
 
+        # Code commands
+        if len(content) > 5:
+            if content[:5] in ["codi ", "code "]:
+                splitted = content.split()
+
+                if len(splitted) not in [2, 3]:
+                    return
+
+                # Checking if number is valid and setting it
+                if len(splitted) == 3:
+                    if splitted[2] in ["1", "2", "3", "4", "5"]:
+                        times = int(splitted[2])
+                    else:
+                        await self.send_to_ch( channel, splitted[2] + " is not a number between 1 and 5.", 5 )
+                        return
+                else:
+                    times = 1
+
+                # Saying code
+                await self.join_n_leave(guild_id, auth_vc, channel, is_sound=False, params=[splitted[1], times])
+                return
+
+        # !repetir last code.
         if content == "repetir":
             if str(guild_id) in self.last_code:
-                code = self.last_code[str(guild_id)]
-
-                if auth_vc!= None and guild_id not in self.playing_on:
-                    self.playing_on.append(guild_id)
-                    vc = await auth_vc.channel.connect()
-
-                    await self.play_code(code, vc)
-
-                    await vc.disconnect()
-                    self.playing_on.remove(guild_id)
-
-                elif guild_id in self.playing_on:
-                    await self.send_to_ch(channel, 'I\'m already playing a sound!', 5)
-
-                else:
-                    await self.send_to_ch(channel, 'User is not in a channel.', 5)
-
-                return
+                await self.join_n_leave(guild_id, auth_vc, channel, is_sound=False, params=[None, 1])
 
             else:
                 await self.send_to_ch(channel, 'I don\'t have anything to repeat!', 5)
-                return
+            return
 
-        if len(content.split())==2:
-            if content.split()[0] in ["codi", "code"]:
-                code = content.split()[1]
-                self.last_code[str(guild_id)] = code
-
-                # Only play if user is in a voice channel
-                if auth_vc != None and guild_id not in self.playing_on:
-
-                    # Set playing status
-                    self.playing_on.append(guild_id)
-
-                    # Create StreamPlayer
-                    vc = await auth_vc.channel.connect()
-
-                    await self.play_code(code, vc)
-
-                    # Disconnect after the player has finished
-                    await vc.disconnect()
-
-                    # Set playing status
-                    self.playing_on.remove(guild_id)
-
-                elif guild_id in self.playing_on:
-                    await self.send_to_ch(channel, 'I\'m already playing a sound!', 5)
-
-                else:
-                    await self.send_to_ch(channel, 'User is not in a channel.', 5)
-
-                return
-
-        if len(content.split())==3:
-            splitted = content.split()
-            if splitted[0] in ["codi", "code"]:
-                code = splitted[1]
-                times = splitted[2]
-
-                if times in ["1", "2", "3", "4", "5"]:
-                    timesInt = int(times)
-                else:
-                    await self.send_to_ch( channel, times + " is not a number between 1 and 5.", 5 )
-                    return
-
-                self.last_code[str(guild_id)] = code
-
-                # Only play if user is in a voice channel
-                if auth_vc != None and guild_id not in self.playing_on:
-
-                    # Set playing status
-                    self.playing_on.append(guild_id)
-
-                    # Create StreamPlayer
-                    vc = await auth_vc.channel.connect()
-
-                    await self.play_code(code, vc, timesInt)
-
-                    # Disconnect after the player has finished
-                    await vc.disconnect()
-
-                    # Set playing status
-                    self.playing_on.remove(guild_id)
-
-                elif guild_id in self.playing_on:
-                    await self.send_to_ch(channel, 'I\'m already playing a sound!', 5)
-
-                else:
-                    await self.send_to_ch(channel, 'User is not in a channel.', 5)
 
 # Main program
 if __name__ == "__main__":
