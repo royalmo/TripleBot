@@ -573,7 +573,7 @@ class TripleBot(discord.Client):
         if len(content)>5:
             dont_delete_answer = content[-5:] == ' keep'
             if dont_delete_answer:
-                content = content[-5:]
+                content = content[:-5]
         else:
             dont_delete_answer = False
 
