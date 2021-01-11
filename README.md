@@ -1,5 +1,11 @@
 # TripleBot
 
+Summary:
+- [What is it?](#what-is-it)
+- [How do I add it on my Discord Server?](#how-do-i-add-it-on-my-discord-server)
+- [How do Install it on my own device?](#how-do-i-install-it)
+- [How do I add sounds?](#how-do-i-add-sounds)
+
 *Made by royalmo*
 
 ## What is it?
@@ -11,24 +17,53 @@ The bot has also the function of *speak a code*, that will pronounce all the asc
 ### Commands
 *This is the help message that the bot will show to us if we type `!triple help` or `!triple help keep`*
 
+**TRIPLEBOT COMMANDS:**
 
-`!codi XXxXXx` or `!code YyYYyyY`: Speak in cursed catalan an ascii-letters code.
+`!triple ranks`: Shows the top 10 sounds, like a ranking.
+
+`!triple ranks users`: Shows the top 10 users, like a ranking.
+
+
+`!triple calla`: Please, don't do this, be nice with the bot :(
+
+`!triple reload`: Reoads this menu and all the comands and databases.
+
+`!triple fetch`: Syncs the project folder with the repository.
+
+
+`!code YyYYyyY`: Speak in cursed catalan a letters-only code.
+
+`!code XXXXXX 3`: Speak the code 3 times (must be a number between 1 and 5)
 
 `!repetir`: Repeats last saved code.
 
-`!triple stats`: Shows some information about the popularity of each audio.
 
-`!triple stats X`: Shows all statistics about soundbox X.
+`!triple stats`: Shows your stats.
+
+`!triple stats X`: Shows all statistics about soundbox *X*.
+
+`!triple stats @someone`: Shows statistics about @someone.
+
 
 `!triple help`: Shows this updated menu.
 
-`!triple help keep`: Shows and doesn't delete this menu.
+`!triple <command> keep`: Does the <command> and doesn't delete the response.
+
 
 *Current soundbox commands:*
-`!triple`, `!letsgo`, `!rot`, ... (It will depend of the sounds you have)
+`!triple`, `!letsgo`, `!rot`, ... (It will depend of the sounds you have, or are on the server at that moment)
 
 
-## How do I use it?
+**Max. sounds before timeout:** 2 sounds every 30 secs, 15 sounds every 10 mins or 30 sounds every 30 mins.
+
+
+## How do I add it on my Discord Server?
+
+If you are an Admin of a Discord Server, you can add your bot by going to [ericroy.net/add-triplebot](https://ericroy.net/add-triplebot "ericroy.net/add-triplebot").
+
+Then, you can start using the bot by typing commands (see all commands in `!triple help keep`). Be sure to be in a voice channel so you can listen the sounds!
+
+## How do Install it?
 
 To use the bot, you need to do the following steps:
 
@@ -75,8 +110,13 @@ Once you are in a voice chat, type a command (type `!triple help` to see the lis
 
 The bot can **only play a sound request at once**, so if you invite him in multiple servers, it may work slower than expected.
 
+As you are hosting your own bot, you can change the `ADMIN_ID`, so you can run hidden commands, such as `!triple fetch restart` (fetch and restart the python file), `!triple guilds` (a list of all the guilds the bot is in), or `!triple guilds ranks` (the top 10 guilds that played the most sounds).
+
 
 ## How do I add sounds?
+
+*If you are not hosting the bot, you can open a Pull Request with these changes (you'll need to Fork the repository first), and I'll be glad to apply them. If you are hosting the bot, just ignore this line.*
+
 If you want to add the `cow` sound, for example, you will need to do some steps:
 
 ### 1. Add the .mp3 sound
