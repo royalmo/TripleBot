@@ -328,6 +328,9 @@ def fetch_repo(download=True):
     update_help_menu()
     update_db_cmds()
 
+    # For debug
+    print("Reload complete!")
+
 ## DISCORD CLASS ##
 
 class TripleBot(discord.Client):
@@ -355,7 +358,7 @@ class TripleBot(discord.Client):
 
     def user_new_sound(self, user_id):
         """
-        Given a `user_id [int]` and using `self.user_cmds [dict]`, this function will return `True` or `False` depending on if the user can start a sound command or not.
+        Given a `user_id [str]` and using `self.user_cmds [dict]`, this function will return `True` or `False` depending on if the user can start a sound command or not.
 
         If return is `True`, a command will be added to the user list.
 
@@ -367,6 +370,7 @@ class TripleBot(discord.Client):
         # First, we whitelist the admin xD
         # If this is commented, it's because I am debugging timeouts.
         if int(user_id) in ADMIN_ID:
+            print("Timeout doesn't affect this user. User in ADMIN_ID.")
             return True
 
         # Gets the time of the request in seconds
@@ -399,18 +403,43 @@ class TripleBot(discord.Client):
                 counters[0] += 1
 
         # Print for debugging
-        print("Got counters:", counters, "\nLimits are:", limits)
+        print("Got counters:", counters, "of", limits, end='')
 
         # Then we check if the user is in the range
         if max([counters[i]-limits[i] for i in range(len(counters))]) < 0:
             # Update dict and return True
             new_timings.append(current_time)
             self.user_cmds[user_id] = new_timings
+            print(' Sound request accepted.')
             return True
 
         # Update dict and return False
         self.user_cmds[user_id] = new_timings
+        print(' Sound request denied.')
         return False
+
+    def undo_user_new_sound(self, user_id):
+        """
+        Given a `user_id [str]` and using `self.user_cmds [dict]`, this function will undo last message played add, in case the user sent the message while the bot was already playing something, or similar.
+
+        Doesn't return anything.
+        """
+        # Print rollback msg.
+        print('Rollback of timeout add for user', user_id, '. Prepared error.')
+
+        # Admins are not on timeout, so they don't appear on the list.
+        if int(user_id) in ADMIN_ID:
+            print("User is admin. Skipping")
+            return
+
+        # Check if user exists.
+        if user_id not in self.user_cmds:
+            print("ERROR: User ", user_id, "not found in timeout dict.")
+            return
+
+        # Removing last message said.
+        actual_times = self.user_cmds[user_id]
+        self.user_cmds[user_id] = actual_times.remove(max(actual_times))
 
     async def send_to_ch(self, channel, text, delete=None):
         """
@@ -489,6 +518,8 @@ class TripleBot(discord.Client):
 
         `guild_id [int]`: The guild the bot is playing to.
 
+        `user_id [int]`: The id of the user that requested the sound.
+
         `auth_vc [VoiceChannel]`: The voice channel where to play.
 
         `channel [TextChannel]`: The text channel where to answer.
@@ -531,12 +562,16 @@ class TripleBot(discord.Client):
             self.playing_on.remove(guild_id)
             print("Left a VC on guild id", guild_id)
 
-        # Sending user error messages if needed.
-        elif guild_id in self.playing_on:
-            await self.send_to_ch(channel, 'I\'m already playing a sound!', 5)
-
         else:
-            await self.send_to_ch(channel, 'User is not in a channel.', 5)
+            # Remove last timeout of that user.
+            self.undo_user_new_sound(str(user_id))
+
+            # Sending user error messages if needed.
+            if guild_id in self.playing_on:
+                await self.send_to_ch(channel, 'I\'m already playing a sound!', 5)
+
+            else:
+                await self.send_to_ch(channel, 'User is not in a channel.', 5)
 
 
     async def on_message(self, message):
@@ -578,7 +613,7 @@ class TripleBot(discord.Client):
             dont_delete_answer = False
 
         # Pring for degugging
-        print("Got message candidate:", content, "from user id:", auth_id, "at:", time.ctime(), 'Msg deleted.' if msg_got_deleted else '')
+        print("Got message candidate:", content, "from user id:", auth_id, "at:", time.ctime(), 'Guild:', guild_id, 'Msg deleted.' if msg_got_deleted else '')
 
         # Single commands: !triple help
         if content == 'triple help':
@@ -603,6 +638,7 @@ class TripleBot(discord.Client):
             if 'restart' in content:
                 if auth_id in ADMIN_ID:
 
+                    print("Closing discord. Restarting.")
                     await self.close() # Close the Discord connection
                     # Restarts the python application
                     execv(executable, [executable, __file__] + [argv[0], 'fast'])
@@ -746,6 +782,8 @@ class TripleBot(discord.Client):
                 splitted = content.split()
 
                 if len(splitted) not in [2, 3]:
+                    self.undo_user_new_sound(str(auth_id))
+                    await self.send_to_ch( channel, "Wrong code lenght, type `!triple help` to get more info.", None if dont_delete_answer else 5 )
                     return
 
                 # Checking if number is valid and setting it
@@ -753,6 +791,7 @@ class TripleBot(discord.Client):
                     if splitted[2] in ["1", "2", "3", "4", "5"]:
                         times = int(splitted[2])
                     else:
+                        self.undo_user_new_sound(str(auth_id))
                         await self.send_to_ch( channel, splitted[2] + " is not a number between 1 and 5.", None if dont_delete_answer else 5 )
                         return
                 else:
@@ -768,10 +807,12 @@ class TripleBot(discord.Client):
                 await self.join_n_leave(guild_id, auth_id, auth_vc, channel, is_sound=False, params=[None, 1])
 
             else:
+                self.undo_user_new_sound(str(auth_id))
                 await self.send_to_ch(channel, 'I don\'t have anything to repeat!', None if dont_delete_answer else 5)
             return
 
         await self.send_to_ch(channel, 'Command not found, try another.', None if dont_delete_answer else 5)
+        self.undo_user_new_sound(str(auth_id))
 
 
 # Main program
