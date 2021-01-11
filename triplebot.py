@@ -516,6 +516,8 @@ class TripleBot(discord.Client):
                 # If params is none, it means that cmd is !repetir
                 if params[0]==None:
                     params[0] = self.last_code[str(guild_id)]
+                else:
+                    self.last_code[str(guild_id)] = params[0]
                 await self.play_code(params[0], vc, params[1], guild_id)
 
             # Adding to database for stats.
