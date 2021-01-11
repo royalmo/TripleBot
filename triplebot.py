@@ -570,18 +570,25 @@ class TripleBot(discord.Client):
             if content.split()[0] not in ['codi', 'code']:
                 return
 
+        if len(content)>5:
+            dont_delete_answer = content[-5:] == ' keep'
+            if dont_delete_answer:
+                content = content[-5:]
+        else:
+            dont_delete_answer = False
+
         # Pring for degugging
         print("Got message candidate:", content, "from user id:", auth_id, "at:", time.ctime(), 'Msg deleted.' if msg_got_deleted else '')
 
         # Single commands: !triple help
-        if content in ['triple help', 'triple help keep']:
-            await self.send_to_ch(channel, HELP_TEXT, None if 'keep' in content else 25)
+        if content == 'triple help':
+            await self.send_to_ch(channel, HELP_TEXT, None if dont_delete_answer else 25)
             return
 
         # Reloads commands, databases and the help menu
         if content == "triple reload":
             fetch_repo(download=False)
-            await self.send_to_ch(channel, 'Reloaded successfully!', 5)
+            await self.send_to_ch(channel, 'Reloaded successfully!', None if dont_delete_answer else 5)
             return
 
         # Single commands: !triple fetch (restart is for admin only)
@@ -590,7 +597,7 @@ class TripleBot(discord.Client):
             fetch_repo()
 
             # Shows a message
-            await self.send_to_ch(channel, 'Fetched!' + ('\nRestarting...' if 'restart' in content else ''), 5)
+            await self.send_to_ch(channel, 'Fetched!' + ('\nRestarting...' if 'restart' in content else ''), None if dont_delete_answer else 5)
 
             # Restart if requester is admin.
             if 'restart' in content:
@@ -601,7 +608,7 @@ class TripleBot(discord.Client):
                     execv(executable, [executable, __file__] + [argv[0], 'fast'])
 
                 else:
-                    await self.send_to_ch(channel, 'Can\'t restart!\nNo permmissions.', 5)
+                    await self.send_to_ch(channel, 'Can\'t restart!\nNo permmissions.', None if dont_delete_answer else 5)
             return
 
         # Triple ranks: shows top 10 audios
@@ -612,7 +619,7 @@ class TripleBot(discord.Client):
             print("DB response:", db_response)
 
             # Sending response
-            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 sounds.*\n' + ''.join(['\n**{0}**: has been played {1} times.'.format(command.upper(), times) for command, times in db_response]), 15)
+            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 sounds.*\n' + ''.join(['\n**{0}**: has been played {1} times.'.format(command.upper(), times) for command, times in db_response]), None if dont_delete_answer else 15)
             return
 
         if content == "triple ranks users":
@@ -622,13 +629,13 @@ class TripleBot(discord.Client):
             print("DB response:", db_response)
 
             # Sending response
-            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 users.*\n' + ''.join(['\n**{0}**: has played {1} sounds.'.format( user_name, times) for user_name, times in db_response]), 15)
+            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 users.*\n' + ''.join(['\n**{0}**: has played {1} sounds.'.format( user_name, times) for user_name, times in db_response]), None if dont_delete_answer else 15)
             return
 
         # Triple stop (admin only). Stops the bot
         if content == 'triple stop' and auth_id in ADMIN_ID:
 
-            await self.send_to_ch(channel, "Stopping bot...", 2)
+            await self.send_to_ch(channel, "Stopping bot...", None if dont_delete_answer else 2)
             await self.close() # Close the Discord connection
             return
 
@@ -636,16 +643,16 @@ class TripleBot(discord.Client):
         if content == 'triple calla':
             if guild_id in self.playing_on:
                 self.shutup_at.append(guild_id)
-                await self.send_to_ch(channel, "Nooo please! Why have you done that, {0}?".format(self.get_user(auth_id).mention), 5)
+                await self.send_to_ch(channel, "Nooo please! Why have you done that, {0}?".format(self.get_user(auth_id).mention), None if dont_delete_answer else 5)
             else:
-                await self.send_to_ch(channel, "I'm already quiet u bastard", 5)
+                await self.send_to_ch(channel, "I'm already quiet u bastard", None if dont_delete_answer else 5)
             return
 
         # Triple guilds (admin only): shows all guilds the bot is in.
         if content == "triple guilds" and auth_id in ADMIN_ID:
 
             # Shows response
-            await self.send_to_ch(channel, "**GUILDS WHERE I AM:**" + ''.join(['\n{0} - *Id: {1}*'.format(cguild.name, cguild.id) for cguild in self.guilds] ), 15)
+            await self.send_to_ch(channel, "**GUILDS WHERE I AM:**" + ''.join(['\n{0} - *Id: {1}*'.format(cguild.name, cguild.id) for cguild in self.guilds] ), None if dont_delete_answer else 15)
             return
 
         # Triple guilds (admin only): shows all guilds the bot is in.
@@ -657,11 +664,11 @@ class TripleBot(discord.Client):
 
             if db_response != None:
                 # Guild found in database
-                await self.send_to_ch(channel, "**STATS FOR {0}**\n\nThis guild has played {1} sounds.\nGuild in database since {2}.\nLast sound played at {3}.".format(self.get_guild(guild_id).name, db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3]))), 15)
+                await self.send_to_ch(channel, "**STATS FOR {0}**\n\nThis guild has played {1} sounds.\nGuild in database since {2}.\nLast sound played at {3}.".format(self.get_guild(guild_id).name, db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3]))), None if dont_delete_answer else 15)
 
             else:
                 # Guild not found in database
-                await self.send_to_ch(channel, "Guild {0} not found in our database.\nThis means that this guild hasn't played any sound with TripleBot.".format(self.get_guild(guild_id).name), 5)
+                await self.send_to_ch(channel, "Guild {0} not found in our database.\nThis means that this guild hasn't played any sound with TripleBot.".format(self.get_guild(guild_id).name), None if dont_delete_answer else 5)
 
             return
 
@@ -673,7 +680,7 @@ class TripleBot(discord.Client):
             print("DB response:", db_response)
 
             # Sending response
-            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 guilds.*\n' + ''.join(['\n**{0}**: has played {1} sounds.'.format(self.get_guild(command).name, times) for command, times in db_response]), 15)
+            await self.send_to_ch(channel, '**TripleBot Ranks** - *Top 10 guilds.*\n' + ''.join(['\n**{0}**: has played {1} sounds.'.format(self.get_guild(command).name, times) for command, times in db_response]), None if dont_delete_answer else 15)
             return
 
         # Triple stats [command]: shows all information of a sound
@@ -685,7 +692,7 @@ class TripleBot(discord.Client):
                 print("DB response:", db_response)
 
                 # Sends response
-                await self.send_to_ch(channel, '**TripleBot Command Stats**: *{0}*\nHas been played {1} times.\nTripleBot is keeping track of this sound since *{2}*\nLast time played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3])) if int(db_response[3]) != 0 else "Hasn't been played yet."  ), 15 )
+                await self.send_to_ch(channel, '**TripleBot Command Stats**: *{0}*\nHas been played {1} times.\nTripleBot is keeping track of this sound since *{2}*\nLast time played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3])) if int(db_response[3]) != 0 else "Hasn't been played yet."  ), None if dont_delete_answer else 15 )
 
                 return
 
@@ -708,11 +715,11 @@ class TripleBot(discord.Client):
 
                 if db_response != None:
                     # User found in database
-                    await self.send_to_ch(channel, "**STATS FOR {0}**\n\nThis user has played {1} sounds.\nUser in database since {2}.\nLast sound played at {3}.".format(mentionstr, db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3]))), 15)
+                    await self.send_to_ch(channel, "**STATS FOR {0}**\n\nThis user has played {1} sounds.\nUser in database since {2}.\nLast sound played at {3}.".format(mentionstr, db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3]))), None if dont_delete_answer else 15)
 
                 else:
                     # User not found in database
-                    await self.send_to_ch(channel, "User {0} not found in our database.\nThis means that this user hasn't played any sound with TripleBot.".format(mentionstr), 5)
+                    await self.send_to_ch(channel, "User {0} not found in our database.\nThis means that this user hasn't played any sound with TripleBot.".format(mentionstr), None if dont_delete_answer else 5)
 
                 return
 
@@ -720,12 +727,12 @@ class TripleBot(discord.Client):
         # So we need to check if the user
         # First we will return all commands that don't make sounds
         if not( "cod" in content or content in COMMAND_LIST + ['repetir']):
-            await self.send_to_ch(channel, 'Command not found, try another.', 5)
+            await self.send_to_ch(channel, 'Command not found, try another.', None if dont_delete_answer else 5)
             return
 
         # Then we can check if the user can play a sound.
         if not self.user_new_sound(str(auth_id)):
-            await self.send_to_ch(channel, "Slow down dude, ur on cooldown!", 5)
+            await self.send_to_ch(channel, "Slow down dude, ur on cooldown!", None if dont_delete_answer else 5)
             return # if not we return
 
         # Sound commands
@@ -746,7 +753,7 @@ class TripleBot(discord.Client):
                     if splitted[2] in ["1", "2", "3", "4", "5"]:
                         times = int(splitted[2])
                     else:
-                        await self.send_to_ch( channel, splitted[2] + " is not a number between 1 and 5.", 5 )
+                        await self.send_to_ch( channel, splitted[2] + " is not a number between 1 and 5.", None if dont_delete_answer else 5 )
                         return
                 else:
                     times = 1
@@ -761,10 +768,10 @@ class TripleBot(discord.Client):
                 await self.join_n_leave(guild_id, auth_id, auth_vc, channel, is_sound=False, params=[None, 1])
 
             else:
-                await self.send_to_ch(channel, 'I don\'t have anything to repeat!', 5)
+                await self.send_to_ch(channel, 'I don\'t have anything to repeat!', None if dont_delete_answer else 5)
             return
 
-        await self.send_to_ch(channel, 'Command not found, try another.', 5)
+        await self.send_to_ch(channel, 'Command not found, try another.', None if dont_delete_answer else 5)
 
 
 # Main program

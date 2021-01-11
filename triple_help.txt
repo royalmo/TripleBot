@@ -16,7 +16,7 @@
 `!triple stats @someone`: Shows statistics about @someone.
 
 `!triple help`: Shows this updated menu.
-`!triple help keep`: Shows and doesn't delete this menu.
+`!triple <command> keep`: Does the <command> and doesn't delete the response.
 
 *Current soundbox commands:*
 {0}
