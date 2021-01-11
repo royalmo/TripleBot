@@ -565,7 +565,7 @@ class TripleBot(discord.Client):
             msg_got_deleted = True
         else:
             msg_got_deleted = False
-            if message.split()[0] not in ['codi', 'code']:
+            if content.split()[0] not in ['codi', 'code']:
                 return
 
         # Pring for degugging
