@@ -558,16 +558,18 @@ class TripleBot(discord.Client):
         guild_id = message.guild.id
         mentions = message.mentions
 
-        # Pring for degugging
-        print("Got message candidate:", content, "from user id:", auth_id, "at:", time.ctime())
-
         # Now that we have all the things, we can remove the message:
         # We don't remove it in code commands as we want to see them on chat.
-        if content.split()[0] in COMMAND_LIST:
+        if content.split()[0] in COMMAND_LIST + ['repetir']:
             await message.delete()
             msg_got_deleted = True
         else:
             msg_got_deleted = False
+            if message.split()[0] not in ['codi', 'code']:
+                return
+
+        # Pring for degugging
+        print("Got message candidate:", content, "from user id:", auth_id, "at:", time.ctime(), 'Msg deleted.' if msg_got_deleted else '')
 
         # Single commands: !triple help
         if content in ['triple help', 'triple help keep']:
@@ -715,7 +717,7 @@ class TripleBot(discord.Client):
         # FROM NOW ON MUSIC WILL BE PLAYED
         # So we need to check if the user
         # First we will return all commands that don't make sounds
-        if not( "cod" in content or content in COMMAND_LIST):
+        if not( "cod" in content or content in COMMAND_LIST + ['repetir']):
             await self.send_to_ch(channel, 'Command not found, try another.', 5)
             return
 
