@@ -391,16 +391,17 @@ class TripleBot(discord.Client):
         limits = [2, 15, 30]
         new_timings = []
 
-        # We do this for each time
-        for stime in timings:
-            diff  = current_time-stime
-            if diff < 1800:
-                new_timings.append(stime)
-                counters[2] += 1
-            if diff < 600:
-                counters[1] += 1
-            if diff < 30:
-                counters[0] += 1
+        if timings != []:
+            # We do this for each time
+            for stime in timings:
+                diff  = current_time-stime
+                if diff < 1800:
+                    new_timings.append(stime)
+                    counters[2] += 1
+                if diff < 600:
+                    counters[1] += 1
+                if diff < 30:
+                    counters[0] += 1
 
         # Print for debugging
         print("Got counters:", counters, "of", limits, end='')
