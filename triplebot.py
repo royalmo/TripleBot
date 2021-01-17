@@ -391,7 +391,7 @@ class TripleBot(discord.Client):
         limits = [2, 15, 30]
         new_timings = []
 
-        if timings != [] and type(timings)==list:
+        if timings not in [None, []]:
             # We do this for each time
             for stime in timings:
                 diff  = current_time-stime
