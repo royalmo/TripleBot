@@ -592,7 +592,8 @@ class TripleBot(discord.Client):
             return
 
         # Defining some temp constants
-        content = message.content.lower()[1:]
+        content_not_lowered = message.content[1:]
+        content = content_not_lowered.lower()
         channel = message.channel
         auth_id = message.author.id
         auth_vc = message.author.voice
@@ -763,8 +764,9 @@ class TripleBot(discord.Client):
 
                 return
 
+        # Command to add sounds
         if 'triple add ' in content and len(content.split())>2 and auth_id in ADMIN_ID:
-            output = yt_command(content.split()[2:])
+            output = yt_command(content_not_lowered.split()[2:])
             if output==-1:
                 returnmsg = "Bad parameters given.\nUsage: `!triple add <sound_name> <YT_link> <starttrim> <endtrim>`\nTrim times are in milliseconds."
             elif output==-2:
@@ -776,6 +778,7 @@ class TripleBot(discord.Client):
                 returnmsg = f"Command {content.split()[2]} successfully added! Try it now!"
             
             await self.send_to_ch(channel, returnmsg, 15)
+            return
 
         # FROM NOW ON MUSIC WILL BE PLAYED
         # So we need to check if the user

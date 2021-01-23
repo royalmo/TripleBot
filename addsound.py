@@ -53,10 +53,11 @@ def download_mp3_yt(yt_link, dest_folder, dest_file, starttrim, endtrim):
         dest_file = dest_file[:-4]
 
     # We do this try/except to make sure we can handle video not found err.
-    try:
-        yt = YouTube(yt_link)
-    except:
-        return -1
+    # try:
+    #     yt = YouTube(yt_link)
+    # except Exception as e:
+    #     return -1
+    yt = YouTube(yt_link)
 
     stream = yt.streams.filter(only_audio=True).first()
     fileout = stream.download(output_path=dest_folder, filename=dest_file)
@@ -154,6 +155,7 @@ def yt_command(params):
 
     # Gets all params
     [new_sound, yt_link, starttrim, endtrim] = params
+    new_sound = new_sound.lower()
 
     # Checks new_sound availability
     with open(BOT_SETTINGS_JSON) as fin:
