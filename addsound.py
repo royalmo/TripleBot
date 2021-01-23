@@ -51,20 +51,24 @@ def download_mp3_yt(yt_link, dest_folder, dest_file, starttrim, endtrim):
     # Removing mp3 extension if it has any.
     if dest_file[-4:]=='.mp3':
         dest_file = dest_file[:-4]
-
+    
+    print("Creating yt instance for", yt_link, "...")
     # We do this try/except to make sure we can handle video not found err.
-    # try:
-    #     yt = YouTube(yt_link)
-    # except Exception as e:
-    #     return -1
-    yt = YouTube(yt_link)
+    try:
+        yt = YouTube(yt_link)
+    except Exception as e:
+        print(e)
+        return -1
 
+    # Looking for streams and downloading
+    print("Looking for streams and downloading")
     stream = yt.streams.filter(only_audio=True).first()
     fileout = stream.download(output_path=dest_folder, filename=dest_file)
 
     # Converting to .mp3 using ffmpeg
     # We could just change the file exstension but
     # we want to make sure that the file has the correct headers.
+    print("Converting to .mp3 using ffmpeg.")
     subp_run([
         'ffmpeg', '-y',
         '-i', os.path.join(dest_folder, dest_file+'.mp4'),
@@ -72,9 +76,11 @@ def download_mp3_yt(yt_link, dest_folder, dest_file, starttrim, endtrim):
     ])
 
     # Removing old mp4 file
+    print("Removing mp4 temp file")
     os.remove(fileout)
 
     # Triming and normalizing
+    print("Trimming and normalising")
     endfile = dest_folder+ dest_file+'.mp3'
     trim_norm_mp3(endfile, starttrim, endtrim)
 
@@ -88,6 +94,7 @@ def trim_norm_mp3(filepath, start=0, end=5000, norm_to=NORMALIZE_TO):
     If end is > than len(audio), all audio is returned.
     """
     # Get file info
+    print("Loading sound for trimming and normalising.")
     sound = AudioSegment.from_mp3(filepath)
     # len() and slicing are in milliseconds
     sound_lenght = len(sound)
@@ -101,15 +108,16 @@ def trim_norm_mp3(filepath, start=0, end=5000, norm_to=NORMALIZE_TO):
         end = sound_lenght
 
     # Trimming
+    print(f"Trimming {filepath} to {start}:{end}")
     trimmed = sound[start:end]
 
     # Normalizing
     change_in_dBFS = norm_to - trimmed.dBFS
-    print(change_in_dBFS)
-    out_sound = trimmed.apply_gain(change_in_dBFS)
+    print("Sound", filepath, "will be gained with dB:", change_in_dBFS)
+    norm_sound = trimmed.apply_gain(change_in_dBFS)
 
     # Exporting
-    out_sound.export(filepath, format="mp3")
+    norm_sound.export(filepath, format="mp3")
 
 def print_gains():
     """
