@@ -17,6 +17,9 @@ from platform import system as operative_system
 from os import execv, system as terminal
 from sys import argv, executable
 
+# Importing own files
+from addsound import yt_command
+
 # Defining some constants
 PYPATH = str(Path(__file__).parent.absolute()) + "/"
 THISOS = operative_system()
@@ -759,6 +762,20 @@ class TripleBot(discord.Client):
                     await self.send_to_ch(channel, "User {0} not found in our database.\nThis means that this user hasn't played any sound with TripleBot.".format(mentionstr), None if dont_delete_answer else 5)
 
                 return
+
+        if 'triple add ' in content and len(content.split())>2 and auth_id in ADMIN_ID:
+            output = yt_command(content.split()[2:])
+            if output==-1:
+                returnmsg = "Bad parameters given.\nUsage: `!triple add <sound_name> <YT_link> <starttrim> <endtrim>`\nTrim times are in milliseconds."
+            elif output==-2:
+                returnmsg = "Error: you are creating a sound command that already exists!"
+            elif output==-3:
+                returnmsg = f"Error: Youtube video with URL {content.split()[3]} not found!"
+            else:
+                update_cmd_list()
+                returnmsg = f"Command {content.split()[2]} successfully added! Try it now!"
+            
+            await self.send_to_ch(channel, returnmsg, 15)
 
         # FROM NOW ON MUSIC WILL BE PLAYED
         # So we need to check if the user
