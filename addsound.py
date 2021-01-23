@@ -43,7 +43,7 @@ def add_to_json(sound):
         else:
             fout.write(dumps(json_converted))
 
-def download_mp3_yt(yt_link, dest_folder, dest_file, trim):
+def download_mp3_yt(yt_link, dest_folder, dest_file, starttrim, endtrim):
     """
     Downloads and saves an mp3 of that yt video.
     dest_file doesn't need to have the '.mp3' extension.
@@ -52,6 +52,7 @@ def download_mp3_yt(yt_link, dest_folder, dest_file, trim):
     if dest_file[-4:]=='.mp3':
         dest_file = dest_file[:-4]
 
+    # We do this try/except to make sure we can handle video not found err.
     try:
         yt = YouTube(yt_link)
     except:
@@ -72,8 +73,9 @@ def download_mp3_yt(yt_link, dest_folder, dest_file, trim):
     # Removing old mp4 file
     os.remove(fileout)
 
+    # Triming and normalizing
     endfile = dest_folder+ dest_file+'.mp3'
-    trim_norm_mp3(endfile, trim[0], trim[1])
+    trim_norm_mp3(endfile, starttrim, endtrim)
 
     return 0
 
@@ -113,7 +115,7 @@ def print_gains():
     At the end it prints the average gain
     """
     # Loads all sounds
-    with open(PYPATH + 'bot_settings.json') as fin:
+    with open(BOT_SETTINGS_JSON) as fin:
         commands = loads(fin.read())['cmds']
 
     # Gets all gains
@@ -127,9 +129,51 @@ def print_gains():
     print('\n')
     print('Average:', sum(totaldbfs)/len(totaldbfs))
 
+def commit_new_sound(sound):
+    """
+    Makes a commit with the new sound modified.
+    """
+    new_mp3_path = PYPATH + f'/sounds/{sound}_sound.mp3'
+    os.system("cd {} && git add {} && git add {} && git commit -m \"BOT: Auto-commit for new sound: {}\" && git push".format(PYPATH, BOT_SETTINGS_JSON, new_mp3_path, sound))
+
+def yt_command(params):
+    """
+    Mannages a new sound command.
+
+    The params is not the entire msg: !triple add PARAMS
+    PARAMS must contain a command, a YT link, a start, and an end (in ms).
+
+    Error returns:
+    -1: Bad params lenght
+    -2: Sound command already exists
+    -3: YT video not found or bad link
+    """
+    # Checks list lenght
+    if len(params) != 4:
+        return -1
+
+    # Gets all params
+    [new_sound, yt_link, starttrim, endtrim] = params
+
+    # Checks new_sound availability
+    with open(BOT_SETTINGS_JSON) as fin:
+        commands = loads(fin.read())['cmds']
+        if new_sound in commands:
+            return -2
+
+    # Checks and downloads YT and trims
+    if download_mp3_yt(yt_link, PYPATH+'sounds/', new_sound+'_sound', starttrim, endtrim) == -1:
+        return -3
+
+    # If all worked nicely, new sound is added into libraryes
+    add_to_json(new_sound)
+    # Return 0 and commit if all is OK
+    commit_new_sound(new_sound)
+    return 0
+
 # Debugging
 if __name__ == "__main__":
     print('Debug')
-    # download_mp3_yt('v=-crhchLNdas', PYPATH+'', 'mega', [0, 4000])
+    # download_mp3_yt('v=-crhchLNdas', PYPATH+'', 'mega', 0, 4000)
     # trim_norm_mp3(PYPATH + 'mega.mp3')
     # print('endd')
