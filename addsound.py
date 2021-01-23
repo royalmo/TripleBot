@@ -105,10 +105,11 @@ def trim_norm_mp3(filepath, start=0, end=5000, norm_to=NORMALIZE_TO):
 
     # Normalizing
     change_in_dBFS = norm_to - trimmed.dBFS
-    trimmed.apply_gain(change_in_dBFS)
+    print(change_in_dBFS)
+    out_sound = trimmed.apply_gain(change_in_dBFS)
 
     # Exporting
-    trimmed.export(filepath, format="mp3")
+    out_sound.export(filepath, format="mp3")
 
 def print_gains():
     """
@@ -185,5 +186,5 @@ def yt_command(params):
 if __name__ == "__main__":
     print('Debug')
     # download_mp3_yt('v=-crhchLNdas', PYPATH+'', 'mega', 0, 4000)
-    # trim_norm_mp3(PYPATH + 'mega.mp3')
-    # print('endd')
+    trim_norm_mp3(PYPATH + 'sounds/gas_sound.mp3', -1, -1)
+    print('endd')

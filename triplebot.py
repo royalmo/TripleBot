@@ -602,12 +602,12 @@ class TripleBot(discord.Client):
 
         # Now that we have all the things, we can remove the message:
         # We don't remove it in code commands as we want to see them on chat.
-        if content.split()[0] in COMMAND_LIST + ['repetir']:
+        if content in COMMAND_LIST + ['repetir']:
             await message.delete()
             msg_got_deleted = True
         else:
             msg_got_deleted = False
-            if content.split()[0] not in ['codi', 'code']:
+            if content.split()[0] not in ['triple', 'codi', 'code']:
                 return
 
         if len(content)>5:
@@ -770,7 +770,7 @@ class TripleBot(discord.Client):
             if output==-1:
                 returnmsg = "Bad parameters given.\nUsage: `!triple add <sound_name> <YT_link> <starttrim> <endtrim>`\nTrim times are in milliseconds."
             elif output==-2:
-                returnmsg = "Error: you are creating a sound command that already exists!"
+                returnmsg = "Error: you are creating a sound command that already exist!"
             elif output==-3:
                 returnmsg = f"Error: Youtube video with URL {content_not_lowered.split()[3]} not found!"
             else:
