@@ -772,7 +772,7 @@ class TripleBot(discord.Client):
             elif output==-2:
                 returnmsg = "Error: you are creating a sound command that already exists!"
             elif output==-3:
-                returnmsg = f"Error: Youtube video with URL {content.split()[3]} not found!"
+                returnmsg = f"Error: Youtube video with URL {content_not_lowered.split()[3]} not found!"
             else:
                 update_cmd_list()
                 returnmsg = f"Command {content.split()[2]} successfully added! Try it now!"

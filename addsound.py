@@ -93,11 +93,11 @@ def trim_norm_mp3(filepath, start=0, end=5000, norm_to=NORMALIZE_TO):
     sound_lenght = len(sound)
 
     # Making sure start is in range
-    if start<0 or type(start)!=int or start>sound_lenght or start>=end:
+    if start<0 or start>sound_lenght or start>=end:
         start = 0
 
     # Making sure end is in range
-    if end<=start or type(end)!=int or end>sound_lenght:
+    if end<=start or end>sound_lenght:
         end = sound_lenght
 
     # Trimming
@@ -162,6 +162,14 @@ def yt_command(params):
         commands = loads(fin.read())['cmds']
         if new_sound in commands:
             return -2
+
+    # Checks integers
+    try:
+        starttrim = int(starttrim)
+        endtrim = int(endtrim)
+    except ValueError:
+        starttrim = -1
+        endtrim = -1
 
     # Checks and downloads YT and trims
     if download_mp3_yt(yt_link, PYPATH+'sounds/', new_sound+'_sound', starttrim, endtrim) == -1:
