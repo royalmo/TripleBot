@@ -16,10 +16,12 @@
 `!triple stats @someone`: Shows statistics about @someone.
 
 `!triple help`: Shows this updated menu.
-`!triple <command> keep`: Does the <command> and doesn't delete the response.
+`!triple <command> rm`: Does the <command> and delete the response after some time.
 
-*Current soundbox commands:*
-{0}
+*See current sound commands:*
+`!triple commands`: It is always up to date!
+
+`!triple guilds`, `!triple add` and `!triple remove` are only available for bot Admins.
 
 **Max. sounds before timeout:** 2 sounds every 30 secs, 15 sounds every 10 mins or 30 sounds every 30 mins.
 

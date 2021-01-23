@@ -219,5 +219,5 @@ if __name__ == "__main__":
     # download_mp3_yt('v=-crhchLNdas', PYPATH+'', 'mega', 0, 4000)
     # trim_norm_mp3(PYPATH + 'sounds/gas_sound.mp3', -1, -1)
     print_gains()
-    normalise_gains()
-    print('endd')
+    # normalise_gains()
+    print('End of debug')
