@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 PYPATH = str(Path(__file__).parent.absolute()) + "/"
 BOT_SETTINGS_JSON = PYPATH + 'bot_settings.json'
-NORMALIZE_TO= 0
+NORMALIZE_TO = -20.0
 
 def add_to_json(sound):
     """
@@ -77,7 +77,7 @@ def download_mp3_yt(yt_link, dest_folder, dest_file, trim):
 
     return 0
 
-def trim_norm_mp3(filepath, start=0, end=5000):
+def trim_norm_mp3(filepath, start=0, end=5000, norm_to=NORMALIZE_TO):
     """
     Trims an mp3 file to it start and end.
     After trimming, it normalizes the audio to treshhold.
@@ -97,9 +97,35 @@ def trim_norm_mp3(filepath, start=0, end=5000):
     if end<=start or type(end)!=int or end>sound_lenght:
         end = sound_lenght
 
-    # Trimming and exporting
+    # Trimming
     trimmed = sound[start:end]
+
+    # Normalizing
+    change_in_dBFS = norm_to - trimmed.dBFS
+    trimmed.apply_gain(change_in_dBFS)
+
+    # Exporting
     trimmed.export(filepath, format="mp3")
+
+def print_gains():
+    """
+    For debug and statistics, prints all sounds and their gain.
+    At the end it prints the average gain
+    """
+    # Loads all sounds
+    with open(PYPATH + 'bot_settings.json') as fin:
+        commands = loads(fin.read())['cmds']
+
+    # Gets all gains
+    totaldbfs = []
+    for onesound in commands:
+        current = AudioSegment.from_mp3(PYPATH + 'sounds/{}_sound.mp3'.format(onesound)).dBFS
+        totaldbfs.append(current)
+        print(onesound, current)
+
+    # Prints average gain
+    print('\n')
+    print('Average:', sum(totaldbfs)/len(totaldbfs))
 
 # Debugging
 if __name__ == "__main__":
