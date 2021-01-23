@@ -139,6 +139,29 @@ def print_gains():
     print('\n')
     print('Average:', sum(totaldbfs)/len(totaldbfs))
 
+def normalise_gains(norm_to=NORMALIZE_TO):
+    """
+    Changes all gains to the selected gain.
+    """
+    # Loads sound list
+    with open(BOT_SETTINGS_JSON) as fin:
+        commands = loads(fin.read())['cmds']
+
+    # Gets all gains
+    totaldbfs = []
+    for onesound in commands:
+
+        # Loads sound
+        current = AudioSegment.from_mp3(PYPATH + 'sounds/{}_sound.mp3'.format(onesound))
+
+        # Calculating gain
+        change_in_dBFS = norm_to - current.dBFS
+        print("Sound", onesound, "will be gained with dB:", change_in_dBFS)
+
+        # Normalizing and exporting
+        norm_sound = current.apply_gain(change_in_dBFS)
+        norm_sound.export(PYPATH + 'sounds/{}_sound.mp3'.format(onesound), format="mp3")
+
 def commit_new_sound(sound):
     """
     Makes a commit with the new sound modified.
@@ -194,5 +217,7 @@ def yt_command(params):
 if __name__ == "__main__":
     print('Debug')
     # download_mp3_yt('v=-crhchLNdas', PYPATH+'', 'mega', 0, 4000)
-    trim_norm_mp3(PYPATH + 'sounds/gas_sound.mp3', -1, -1)
+    # trim_norm_mp3(PYPATH + 'sounds/gas_sound.mp3', -1, -1)
+    print_gains()
+    normalise_gains()
     print('endd')
