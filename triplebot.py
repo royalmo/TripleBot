@@ -775,6 +775,8 @@ class TripleBot(discord.Client):
                 returnmsg = f"Error: Youtube video with URL {content_not_lowered.split()[3]} not found!"
             else:
                 update_cmd_list()
+                update_help_menu()
+                update_db_cmds()
                 returnmsg = f"Command {content.split()[2]} successfully added! Try it now!"
             
             await self.send_to_ch(channel, returnmsg, 15)
