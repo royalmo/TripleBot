@@ -35,10 +35,11 @@ def add_to_json(sound):
 
     # We try to generate it ourselves
     our_final = '\n'.join(lines[:-3] + [lines[-3]+',', f'        "{sound}"'] + lines[-2:])
+    our_final_loaded = loads(our_final)
 
     with open(BOT_SETTINGS_JSON, 'w') as fout:
         # Checking if they are the same and updating.
-        if json_converted==loads(our_final):
+        if json_converted==our_final_loaded:
             fout.write(our_final)
         else:
             fout.write(dumps(json_converted))
@@ -253,8 +254,10 @@ def yt_command(params):
         return -3
 
     # If all worked nicely, new sound is added into libraryes
+    print(f"Exporting {new_sound} to the json file")
     add_to_json(new_sound)
     # Return 0 and commit if all is OK
+    print("Committing changes")
     commit_new_sound(new_sound)
     return 0
 
