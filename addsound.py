@@ -31,9 +31,15 @@ def add_to_json(sound):
 
     # We generate what we would like to see.
     json_converted = loads(text)
-    json_converted['cmds'].append(sound)
+    try:
+        json_converted['cmds'].append(sound)
+    except:
+        print('Json error when decoding our generated string.')
 
     # We try to generate it ourselves
+    if lines[-1] != '}': # Some nano bug
+        del lines[-1]
+    # The big stuff.
     our_final = '\n'.join(lines[:-3] + [lines[-3]+',', f'        "{sound}"'] + lines[-2:])
     our_final_loaded = loads(our_final)
 
@@ -42,6 +48,7 @@ def add_to_json(sound):
         if json_converted==our_final_loaded:
             fout.write(our_final)
         else:
+            print('Switching to bullshit json...')
             fout.write(dumps(json_converted))
 
 def rm_from_json(sound):
