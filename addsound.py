@@ -43,6 +43,51 @@ def add_to_json(sound):
         else:
             fout.write(dumps(json_converted))
 
+def rm_from_json(sound):
+    """
+    This func removes a sound from the list of sounds
+    in BOT_SETTINGS_JSON .
+    First it tries to do it "nicely", but if it doesn't work,
+    it will do it in a forced way.
+
+    Returns -1 if the sound isn't found.
+    """
+    with open(BOT_SETTINGS_JSON, 'r') as fin:
+        # Getting the text
+        text = fin.read()
+
+    lines = text.split('\n')
+
+    # We generate what we would like to see.
+    json_converted = loads(text)
+
+    # But before that, we make sure sound is in cmds.
+    if sound not in json_converted['cmds']:
+        return -1
+
+    # Now we can do it safely
+    json_converted['cmds'].remove(sound)
+
+    # We try to generate it ourselves. We have to cases:
+    # First, when the sound has a ',' at the end.
+    if f'        "{sound}",' in lines:
+        lines.remove(f'        "{sound}",')
+    elif f'        "{sound}"' in lines:
+        # In this case, we have to remove also the last comma
+        # of the previous element, so we could check for the position as
+        # it will always be the -3
+        lines = lines[:-4] + [lines[-4][:-1]] + lines[-2:]
+
+    # We generate the textfile again.
+    our_final = '\n'.join(lines)
+
+    with open(BOT_SETTINGS_JSON, 'w') as fout:
+        # Checking if they are the same and updating.
+        if json_converted==loads(our_final):
+            fout.write(our_final)
+        else:
+            fout.write(dumps(json_converted))
+
 def download_mp3_yt(yt_link, dest_folder, dest_file, starttrim, endtrim):
     """
     Downloads and saves an mp3 of that yt video.
