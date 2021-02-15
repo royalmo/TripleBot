@@ -801,10 +801,10 @@ class TripleBot(discord.Client):
 
                 return
 
-        # Command to add sounds
-        if 'triple add ' in content and len(content.split())>2 and auth_id in ADMIN_ID:
+        # Command to add or replace sounds from yt
+        if ('triple add ' in content or 'triple replace ' in content) and len(content.split())>2 and auth_id in ADMIN_ID:
             await self.send_to_ch(channel, "I'm on it! If the video is long it will take some time.", 5)
-            output = yt_command(content_not_lowered.split()[2:])
+            output = yt_command(content_not_lowered.split()[2:], 'triple replace ' in content)
             if output==-1:
                 returnmsg = "Bad parameters given.\nUsage: `!triple add <sound_name> <YT_link> <starttrim> <endtrim>`\nTrim times are in milliseconds."
             elif output==-2:
@@ -863,7 +863,7 @@ class TripleBot(discord.Client):
                 await self.join_n_leave(guild_id, auth_id, auth_vc, channel, is_sound=False, params=[splitted[1], times])
                 return
 
-        # !repetir last code.
+        # `!repetir` last code.
         if content == "repetir":
             if str(guild_id) in self.last_code:
                 await self.join_n_leave(guild_id, auth_id, auth_vc, channel, is_sound=False, params=[None, 1])

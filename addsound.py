@@ -215,14 +215,18 @@ def normalise_gains(norm_to=NORMALIZE_TO):
         norm_sound = current.apply_gain(change_in_dBFS)
         norm_sound.export(PYPATH + 'sounds/{}_sound.mp3'.format(onesound), format="mp3")
 
-def commit_new_sound(sound):
+def commit_new_sound(sound, replace):
     """
     Makes a commit with the new sound modified.
+    If replace is True we don't add bot settings json.
     """
     new_mp3_path = PYPATH + f'/sounds/{sound}_sound.mp3'
-    os.system("cd {} && git add {} && git add {} && git commit -m \"BOT: Auto-commit for new sound: {}\" && git push".format(PYPATH, BOT_SETTINGS_JSON, new_mp3_path, sound))
+    if replace:
+        os.system("cd {} && git add {} && git commit -m \"BOT: Auto-commit for new sound: {}\" && git push".format(PYPATH, new_mp3_path, sound))
+    else:
+        os.system("cd {} && git add {} && git add {} && git commit -m \"BOT: Auto-commit for new sound: {}\" && git push".format(PYPATH, BOT_SETTINGS_JSON, new_mp3_path, sound))
 
-def yt_command(params):
+def yt_command(params, replace=False):
     """
     Mannages a new sound command.
 
@@ -243,10 +247,11 @@ def yt_command(params):
     new_sound = new_sound.lower()
 
     # Checks new_sound availability
-    with open(BOT_SETTINGS_JSON) as fin:
-        commands = loads(fin.read())['cmds']
-        if new_sound in commands:
-            return -2
+    if not replace:
+        with open(BOT_SETTINGS_JSON) as fin:
+            commands = loads(fin.read())['cmds']
+            if new_sound in commands:
+                return -2
 
     # Checks integers
     try:
@@ -260,12 +265,14 @@ def yt_command(params):
     if download_mp3_yt(yt_link, PYPATH+'sounds/', new_sound+'_sound', starttrim, endtrim) == -1:
         return -3
 
-    # If all worked nicely, new sound is added into libraryes
-    print(f"Exporting {new_sound} to the json file")
-    add_to_json(new_sound)
+    if not replace: # We change json file only if it's a new sound.
+        # If all worked nicely, new sound is added into libraryes
+        print(f"Exporting {new_sound} to the json file")
+        add_to_json(new_sound)
+
     # Return 0 and commit if all is OK
     print("Committing changes")
-    commit_new_sound(new_sound)
+    commit_new_sound(new_sound, replace)
     return 0
 
 # Debugging
