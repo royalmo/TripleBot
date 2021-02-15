@@ -192,13 +192,17 @@ def print_gains():
     print('\n')
     print('Average:', sum(totaldbfs)/len(totaldbfs))
 
-def normalise_gains(norm_to=NORMALIZE_TO):
+def normalise_gains(norm_to=NORMALIZE_TO, add2commit=False):
     """
     Changes all gains to the selected gain.
     """
     # Loads sound list
     with open(BOT_SETTINGS_JSON) as fin:
         commands = loads(fin.read())['cmds']
+
+    # Going to folder
+    if add2commit:
+        os.system("cd {}".format(PYPATH))
 
     # Gets all gains
     totaldbfs = []
@@ -214,6 +218,14 @@ def normalise_gains(norm_to=NORMALIZE_TO):
         # Normalizing and exporting
         norm_sound = current.apply_gain(change_in_dBFS)
         norm_sound.export(PYPATH + 'sounds/{}_sound.mp3'.format(onesound), format="mp3")
+
+        # Adding to git.
+        if add2commit:
+            os.system("git add sounds/{}_sound.mp3".format(onesound))
+
+    # Commit and push
+    if add2commit:
+        os.system("git commit -m \"BOT: Auto-commit. Normalized sounds.\" && git push")
 
 def commit_new_sound(sound, replace):
     """

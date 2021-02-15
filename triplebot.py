@@ -18,7 +18,7 @@ from os import execv, system as terminal
 from sys import argv, executable
 
 # Importing own files
-from addsound import yt_command
+from addsound import yt_command, normalise_gains
 
 # Defining some constants
 PYPATH = str(Path(__file__).parent.absolute()) + "/"
@@ -800,6 +800,16 @@ class TripleBot(discord.Client):
                     await self.send_to_ch(channel, "User {0} not found in our database.\nThis means that this user hasn't played any sound with TripleBot.".format(mentionstr), None if not delete_answer else 5)
 
                 return
+
+        # Command to normalize all sounds.
+        if content=='triple normalise' and auth_id in ADMIN_ID:
+            await self.send_to_ch(channel, "I'm on it! This can take some time...", 15)
+
+            # Normalising
+            normalise_gains(add2commit=True)
+
+            await self.send_to_ch(channel, "Done! All sounds have been normalized.", 5)
+            return
 
         # Command to add or replace sounds from yt
         if ('triple add ' in content or 'triple replace ' in content) and len(content.split())>2 and auth_id in ADMIN_ID:
