@@ -626,8 +626,8 @@ class TripleBot(discord.Client):
         content = content_not_lowered.lower()
         channel = message.channel
         msg_auth = message.author
-        auth_id = message.author.id
-        auth_vc = message.author.voice
+        auth_id = msg_auth.id
+        auth_vc = msg_auth.voice
         guild_id = message.guild.id
         mentions = message.mentions
 
