@@ -378,7 +378,7 @@ class TripleBot(discord.Client):
         # If this is commented, it's because I am debugging timeouts.
         if int(user_id) in ADMIN_ID:
             print("Timeout doesn't affect this user. User in ADMIN_ID.")
-            return True
+            return True, 0
 
         # Gets the time of the request in seconds
         current_time = int(time.time())
@@ -387,7 +387,7 @@ class TripleBot(discord.Client):
         if user_id not in self.user_cmds:
             print("User not in timeout dict. Allowed to play.")
             self.user_cmds[user_id] = [current_time]
-            return True
+            return True, 0
 
         # If we find it, we get all the timings.
         timings = self.user_cmds[user_id]
@@ -419,12 +419,36 @@ class TripleBot(discord.Client):
             new_timings.append(current_time)
             self.user_cmds[user_id] = new_timings
             print(' Sound request accepted.')
-            return True
+            return True, 0
 
         # Update dict and return False
         self.user_cmds[user_id] = new_timings
-        print(' Sound request denied.')
-        return False
+        print(' Sound request denied. Getting info about the timeout seconds.')
+        new_timings.sort()
+
+        # Get last timeout for each range
+        # lpt = last permitted time
+        lpt1, lpt0 = None, None
+        for ctime in new_timings:
+            if current_time-ctime < 600 and lpt1 == None:
+                lpt1 = ctime
+
+            if current_time-ctime < 30 and lpt0 == None:
+                lpt0 = ctime
+                
+            if lpt1 != None and lpt0 != None:
+                break
+
+        # Get seconds for each timeout:
+        time2 = current_time-new_timings[0] if counters[2]-limits[2] >= 0 else 0
+        time1 = current_time-lpt1 if counters[1]-limits[1] >= 0 else 0
+        time0 = current_time-lpt0 if counters[0]-limits[0] >= 0 else 0
+
+        # Print and return
+        wait_time = max([time2, time1, time0])
+        print(f" This user will have to wait {wait_time} seconds.")
+
+        return False, wait_time
 
     def undo_user_new_sound(self, user_id):
         """
@@ -599,6 +623,7 @@ class TripleBot(discord.Client):
         content_not_lowered = message.content[1:]
         content = content_not_lowered.lower()
         channel = message.channel
+        msg_auth = message.author
         auth_id = message.author.id
         auth_vc = message.author.voice
         guild_id = message.guild.id
@@ -801,8 +826,9 @@ class TripleBot(discord.Client):
             return
 
         # Then we can check if the user can play a sound.
-        if not self.user_new_sound(str(auth_id)):
-            await self.send_to_ch(channel, "Slow down dude, ur on cooldown!", None if not delete_answer else 5)
+        can_play, timeout_seconds = self.user_new_sound(str(auth_id))
+        if not can_play:
+            await self.send_to_ch(channel, "Slow down {0}, wait {1} seconds to play another sound!".format(msg_auth.mention(), timeout_seconds), 10)
             return # if not we return
 
         # Sound commands
