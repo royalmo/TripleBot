@@ -828,7 +828,7 @@ class TripleBot(discord.Client):
         # Then we can check if the user can play a sound.
         can_play, timeout_seconds = self.user_new_sound(str(auth_id))
         if not can_play:
-            await self.send_to_ch(channel, "Slow down {0}, wait {1} seconds to play another sound!".format(msg_auth.mention(), timeout_seconds), 10)
+            await self.send_to_ch(channel, "Slow down {0}, wait {1} seconds to play another sound!".format(msg_auth.mention, timeout_seconds), 10)
             return # if not we return
 
         # Sound commands
