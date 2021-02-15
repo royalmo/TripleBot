@@ -365,7 +365,9 @@ class TripleBot(discord.Client):
 
     def user_new_sound(self, user_id):
         """
-        Given a `user_id [str]` and using `self.user_cmds [dict]`, this function will return `True` or `False` depending on if the user can start a sound command or not.
+        Given a `user_id [str]` and using `self.user_cmds [dict]`, this function will return `True, 0` or `False, time` depending on if the user can start a sound command or not.
+
+        `time` is the number of seconds the user needs to wait to get another sound.
 
         If return is `True`, a command will be added to the user list.
 
@@ -440,9 +442,9 @@ class TripleBot(discord.Client):
                 break
 
         # Get seconds for each timeout:
-        time2 = current_time-new_timings[0] if counters[2]-limits[2] >= 0 else 0
-        time1 = current_time-lpt1 if counters[1]-limits[1] >= 0 else 0
-        time0 = current_time-lpt0 if counters[0]-limits[0] >= 0 else 0
+        time2 = (new_timings[0]+1800)-current_time if counters[2]-limits[2] >= 0 else 0
+        time1 = (lpt1+600)-current_time if counters[1]-limits[1] >= 0 else 0
+        time0 = (lpt0+30)-current_time if counters[0]-limits[0] >= 0 else 0
 
         # Print and return
         wait_time = max([time2, time1, time0])
