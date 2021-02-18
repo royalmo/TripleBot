@@ -566,6 +566,20 @@ class TripleBot(discord.Client):
         # Only play music if user is in a voice channel and bot is not already in a vc on the same guild
         if auth_vc != None and guild_id not in self.playing_on:
 
+            # Checking if the voice channel is full.
+            # print(len(auth_vc.channel.members), auth_vc.channel.user_limit)
+            # limit = auth_vc.channel.user_limit
+            # if limit <= len(auth_vc.channel.members) and limit!=0:
+            #     print("Can't play to the voice channel: This channel is full!")
+
+            #     # Remove last timeout of that user.
+            #     self.undo_user_new_sound(str(user_id))
+            #     await self.send_to_ch(channel, 'This channel is full!', 5)
+
+            #     return
+
+            # Checking the voice channel permissions: is it joinable?
+
             # Adding guild id into list of guilds in use and connecting to vc.
             self.playing_on.append(guild_id)
             vc = await auth_vc.channel.connect()
@@ -593,7 +607,8 @@ class TripleBot(discord.Client):
 
             # Disconnecting of vc and removing guild id from the list.
             await vc.disconnect()
-            self.playing_on.remove(guild_id)
+            if guild_id in self.playing_on:
+                self.playing_on.remove(guild_id)
             print("Left a VC on guild id", guild_id)
 
         else:
@@ -773,6 +788,12 @@ class TripleBot(discord.Client):
                 await self.send_to_ch(channel, '**TripleBot Command Stats**: *{0}*\nHas been played {1} times.\nTripleBot is keeping track of this sound since *{2}*\nLast time played: *{3}*'.format(db_response[0], db_response[1], time.ctime(int(db_response[2])), time.ctime(int(db_response[3])) if int(db_response[3]) != 0 else "Hasn't been played yet."  ), None if not delete_answer else 15 )
 
                 return
+
+        # Command for reseting playing_on
+        if content == 'triple reset' and auth_id in ADMIN_ID:
+            self.playing_on = []
+            await self.send_to_ch(channel, "Done!", 5)
+            return
 
         # Triple stats and triple stats [user]: shows all info about that person.
         if len(content) >= 12:
