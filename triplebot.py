@@ -18,7 +18,7 @@ from os import execv, system as terminal
 from sys import argv, executable
 
 # Importing own files
-from addsound import yt_command, normalise_gains
+from addsound import yt_command, normalise_gains, change_gain
 
 # Defining some constants
 PYPATH = str(Path(__file__).parent.absolute()) + "/"
@@ -849,6 +849,23 @@ class TripleBot(discord.Client):
                 returnmsg = f"Command {content.split()[2]} successfully added! Try it now!"
             
             await self.send_to_ch(channel, returnmsg, 15)
+            return
+
+        # Command for rising or lowering sounds.
+        if ('triple rise ' in content or 'triple lower ' in content) and len(content.split())>3 and auth_id in ADMIN_ID:
+            splittedContent = content.split()
+            soundToChange = splittedContent[2]
+            try:
+                volume = float(splittedContent[3]) * (-1 if splittedContent[1] == 'lower' else 1)
+            except ValueError:
+                await self.send_to_ch(channel, 'Got a ValueError u bastard.', 15)
+                return
+            
+            if soundToChange not in COMMAND_LIST:
+                await self.send_to_ch(channel, 'This sound does not exist!.', 15)
+                return
+
+            await self.send_to_ch(channel, 'Done! The sound volume has been modified.' if change_gain(soundToChange, volume, True) == 0 else 'An error occurred', None)
             return
 
         # FROM NOW ON MUSIC WILL BE PLAYED

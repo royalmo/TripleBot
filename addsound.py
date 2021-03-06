@@ -287,6 +287,38 @@ def yt_command(params, replace=False):
     commit_new_sound(new_sound, replace)
     return 0
 
+def change_gain(sound, gain, commit=False):
+    """
+    This function will change the gain of a soundtrack and will commit the changes if necessary.
+
+    :param sound: The sound command that will have the gain changed.
+    :type sound: str
+
+    :param gain: The amount of gain applied. If negative, the volume is lowered instead of rised.
+    :type gain: float
+
+    :param commit: If you want to commit the changes. Default value is False.
+    :type commit: bool
+
+    :return: 0 or -1 depending if nothing went wrong (0) or something did (-1).
+    :rtype: int
+    """
+    # Loads sound
+    current = AudioSegment.from_mp3(PYPATH + 'sounds/{}_sound.mp3'.format(sound))
+
+    # Calculating gain
+    print("Sound", sound, "will be gained with dB:", gain)
+
+    # Normalizing and exporting
+    norm_sound = current.apply_gain(gain)
+    norm_sound.export(PYPATH + 'sounds/{}_sound.mp3'.format(sound), format="mp3")
+
+    # Commit and push if needed
+    if commit:
+        os.system(f"cd {PYPATH} && git add sounds/{sound}_sound.mp3 && git commit -m \"BOT: Auto-commit. Changed gain of sound {sound}.\" && git push")
+
+    return 0
+
 # Debugging
 if __name__ == "__main__":
     print('Debug')
