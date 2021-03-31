@@ -338,6 +338,28 @@ def fetch_repo(download=True):
     # For debug
     print("Reload complete!")
 
+def needsAdmin(command):
+    """
+    Returns true if the command prompt requested needs admin permissions.
+
+    :param str command: The command prompt.
+
+    :rtype: bool
+    """
+    # Single commands
+    if command in ["triple guilds", "triple guilds ranks", "triple guilds this", "triple reset", "triple normalise"]:
+        return True
+
+    # Commands with parameters
+    for eachcommand in ["triple rise ", "triple lower ", "triple add ", "triple replace "]:
+        thatlen = len(eachcommand)
+        if thatlen <= len(command):
+            if command[:thatlen-1] == eachcommand:
+                return True
+
+    # If not found, false is returned
+    return False    
+
 ## DISCORD CLASS ##
 
 class TripleBot(discord.Client):
@@ -739,6 +761,13 @@ class TripleBot(discord.Client):
                 await self.send_to_ch(channel, "Nooo please! Why have you done that, {0}?".format(self.get_user(auth_id).mention), None if not delete_answer else 5)
             else:
                 await self.send_to_ch(channel, "I'm already quiet u bastard", None if not delete_answer else 5)
+            return
+
+        # If user is not an admin and inputs an admin command, we throw a message:
+        if auth_id not in ADMIN_ID and needsAdmin(content):
+            
+            # Shows response
+            await self.send_to_ch(channel, "You must be a bot administrator to run this command.", None if not delete_answer else 15)
             return
 
         # Triple guilds (admin only): shows all guilds the bot is in.
